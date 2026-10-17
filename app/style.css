@@ -4,3 +4,11 @@
 /* Gold header section separators, retained TV typography */
 .top .brand,.top .campaign,.top .donation,.top .datetime{position:relative;padding-right:1.2vw}
 .top .brand::after,.top .campaign::after,.top .donation::after,.top .datetime::after{content:'';position:absolute;right:0;top:12%;height:76%;width:2px;background:#dcba75;opacity:.9}
+
+/* QR visibility and campaign alignment */
+.top{gap:.65vw}
+.top .campaign{padding-right:0}
+.top .campaign::after{display:none}
+.top .donation{flex:0 0 126px;padding:0 10px 0 0;gap:0}
+.top .donation img{width:clamp(92px,6.3vw,112px);height:clamp(92px,6.3vw,112px);padding:3px;border:2px solid #e9bd62;border-radius:5px;image-rendering:auto}
+.top .brand img{height:clamp(90px,11vh,119px);width:clamp(90px,7vw,124px);object-fit:contain;object-position:center}
