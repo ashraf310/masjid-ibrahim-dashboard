@@ -12,3 +12,19 @@
 .top .donation{flex:0 0 126px;padding:0 10px 0 0;gap:0}
 .top .donation img{width:clamp(92px,6.3vw,112px);height:clamp(92px,6.3vw,112px);padding:3px;border:2px solid #e9bd62;border-radius:5px;image-rendering:auto}
 .top .brand img{height:clamp(90px,11vh,119px);width:clamp(90px,7vw,124px);object-fit:contain;object-position:center}
+
+/* Full-screen, two-minute Iqamah silence reminder */
+.iqamah-screen{position:relative;width:100vw;height:100dvh;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 48%,#0a3156 0%,#061e3c 58%,#03162e 100%);color:#fff;font-family:Arial,sans-serif}
+.iqamah-pattern{position:absolute;inset:0;opacity:.13;background-image:repeating-linear-gradient(45deg,transparent 0 60px,#537aa0 61px 63px,transparent 64px 120px),repeating-linear-gradient(-45deg,transparent 0 60px,#537aa0 61px 63px,transparent 64px 120px);pointer-events:none}
+.iqamah-logo{position:relative;z-index:1;width:min(15vw,235px);height:19vh;object-fit:contain;margin-bottom:-2vh}
+.iqamah-card{position:relative;z-index:0;display:flex;flex-direction:column;align-items:center;justify-content:space-around;width:82vw;height:73vh;min-height:0;padding:2.5vh 4vw 2vh;background:linear-gradient(125deg,#03152e 5%,#092f55 50%,#03152e);border:3px solid #e8b75d;border-radius:38px;box-shadow:0 0 38px rgba(0,0,0,.45)}
+.iqamah-names{display:flex;align-items:center;justify-content:center;gap:3vw;color:#f6d58b;font:bold clamp(52px,5.8vw,110px)/1.05 Georgia,serif;white-space:nowrap;margin-top:2vh}
+.iqamah-names span+span{border-left:2px solid #d6a850;padding-left:3vw;font-family:serif}
+.iqamah-rule{width:70%;text-align:center;color:#e4b756;display:flex;align-items:center;gap:12px;font-size:26px}
+.iqamah-rule::before,.iqamah-rule::after{content:'';height:2px;background:#d1aa5d;flex:1}
+.iqamah-message{display:flex;align-items:center;justify-content:center;gap:3vw;width:100%}
+.iqamah-phone{flex:none;width:min(18vw,310px);height:min(26vh,310px)}
+.iqamah-message h1{font:bold clamp(42px,5.1vw,96px)/1.05 Arial,sans-serif;margin:0 0 1.5vh;letter-spacing:-.025em}
+.iqamah-message p{font:clamp(21px,1.8vw,36px)/1.3 Arial,sans-serif;color:#f6e9cc;margin:0}
+.iqamah-rule.bottom{opacity:.8}
+.iqamah-return{font:clamp(16px,1.4vw,28px)/1.3 Arial,sans-serif;color:#c8cbd6}
