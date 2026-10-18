@@ -63,3 +63,24 @@
  .countdown{min-height:0;padding:4px 8px 3px}
  .countdown-details{min-height:0}
 }
+
+/* Safe display when optional urgent banner is enabled on short TV WebViews */
+.ticker{height:7%;min-height:52px;padding-top:2px;padding-bottom:2px}
+.urgent{flex:0 0 auto;min-height:0;padding:8px 12px;line-height:1.15}
+@media (max-height:850px){
+ .top{height:13%;min-height:88px}
+ .middle{padding-top:5px;padding-bottom:5px}
+ .prayer-panel{padding:5px 8px}
+ .prayer-heading>strong{font-size:clamp(22px,3.9vh,42px)}
+ .dates{font-size:clamp(11px,2vh,18px);padding:3px 5px 5px}
+ .times th{font-size:clamp(16px,2.7vh,26px);line-height:1}
+ .times td{font-size:clamp(19px,3.5vh,33px);line-height:1;padding:0 1px}
+ .times tr.jumuah td{font-size:clamp(17px,3vh,28px)}
+ .countdown{flex-shrink:0;padding:3px 7px 4px;margin-top:3px}
+ .countdown-title{font-size:clamp(17px,2.6vh,25px)}
+ .countdown-details{padding:1px 0 0}
+ .countdown-details strong{font-size:clamp(22px,3.5vh,35px)}
+ .countdown-details b{font-size:clamp(28px,4.6vh,48px)}
+ .urgent{font-size:clamp(16px,2.5vh,24px);padding:6px 12px}
+ .ticker{min-height:45px}
+}
