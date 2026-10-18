@@ -20,7 +20,27 @@ export async function POST(req:NextRequest){const db=serverDb();if(!db||!process
  const {data:objects,error:listError}=await bucket.list('',{limit:1000,sortBy:{column:'created_at',order:'desc'}});if(listError)throw listError;
  return NextResponse.json({files:(objects||[]).filter(f=>f.name&&!referenced.has(f.name)).map(f=>({name:f.name,createdAt:f.created_at}))},{headers:{'Cache-Control':'no-store'}});
  }if(body.method==='loadDraft'){const {data,error:readError}=await db.from('display_config').select('draft,published').eq('id',1).single();if(readError)throw readError;return NextResponse.json({draft:normalizeConfig(data?.draft),publishedFlyerCount:normalizeConfig(data?.published).flyers.length},{headers:{'Cache-Control':'no-store'}});}if(body.method==='loadPublishedFlyers'){const {data,error:readError}=await db.from('display_config').select('published').eq('id',1).single();if(readError)throw readError;return NextResponse.json({flyers:normalizeConfig(data?.published).flyers},{headers:{'Cache-Control':'no-store'}});}const config=normalizeConfig(body.config);if(config.prayer){const entries=[...Object.values(config.prayer.prayers).flatMap(t=>[t.start,t.iqamah]),config.prayer.jumuah1,config.prayer.jumuah2];if(entries.some(t=>t&&!validHHMM(t)))return NextResponse.json({error:'Invalid prayer time format'},{status:400});config.prayer={...config.prayer,source:'manual',verifiedAt:new Date().toISOString()}}
+ // On Publish, delete files removed from the live slideshow, never on an unsaved draft edit.
+ // Only our own top-level flyer assets are eligible; third-party URLs are never touched.
+ const ownedPath=(url:string)=>{try{
+  const u=new URL(url);const base=new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!);
+  const prefix='/storage/v1/object/public/flyers/';
+  if(u.origin!==base.origin||!u.pathname.startsWith(prefix))return null;
+  const path=decodeURIComponent(u.pathname.slice(prefix.length));
+  return /^[A-Za-z0-9][A-Za-z0-9_.-]{0,199}$/.test(path)?path:null;
+ }catch{return null}};
+ let toDelete:string[]=[];
+ if(body.method==='publish'){
+  const {data:previous,error:readError}=await db.from('display_config').select('published').eq('id',1).single();
+  if(readError)throw readError;
+  const oldFiles=new Set(normalizeConfig(previous?.published).flyers.map(f=>ownedPath(f.url)).filter((f):f is string=>!!f));
+  const keep=new Set(config.flyers.map(f=>ownedPath(f.url)).filter((f):f is string=>!!f));
+  toDelete=[...oldFiles].filter(f=>!keep.has(f));
+ }
  // Always store draft and promote it to published only upon explicit publish.
  const patch=body.method==='publish'?{draft:config,published:config,published_at:new Date().toISOString()}:{draft:config};
- const {error:err}=await db.from('display_config').update(patch).eq('id',1);if(err)throw err;return NextResponse.json({ok:true});}catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Failed'},{status:400})}
+ const {error:err}=await db.from('display_config').update(patch).eq('id',1);if(err)throw err;
+ let deletionWarning:string|null=null;
+ if(toDelete.length){const {error:storageError}=await db.storage.from('flyers').remove(toDelete);if(storageError)deletionWarning=storageError.message;}
+ return NextResponse.json({ok:true,deletedFiles:deletionWarning?0:toDelete.length,deletionWarning});}catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Failed'},{status:400})}
 }
