@@ -64,11 +64,9 @@
  .countdown-details{min-height:0}
 }
 
-/* Safe display when optional urgent banner is enabled on short TV WebViews */
-.ticker{height:7%;min-height:52px;padding-top:2px;padding-bottom:2px}
-.urgent{flex:0 0 auto;min-height:0;padding:8px 12px;line-height:1.15}
+/* Announcement-safe panel adjustments; preserve the established header and ticker */
+.urgent{min-height:0;padding:7px 12px;line-height:1.15}
 @media (max-height:850px){
- .top{height:13%;min-height:88px}
  .middle{padding-top:5px;padding-bottom:5px}
  .prayer-panel{padding:5px 8px}
  .prayer-heading>strong{font-size:clamp(22px,3.9vh,42px)}
@@ -81,6 +79,4 @@
  .countdown-details{padding:1px 0 0}
  .countdown-details strong{font-size:clamp(22px,3.5vh,35px)}
  .countdown-details b{font-size:clamp(28px,4.6vh,48px)}
- .urgent{font-size:clamp(16px,2.5vh,24px);padding:6px 12px}
- .ticker{min-height:45px}
 }
