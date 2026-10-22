@@ -5,21 +5,24 @@ export const runtime='nodejs';export const dynamic='force-dynamic';
 const headers={'Cache-Control':'no-store'};
 async function authenticated(req:NextRequest){
  const db=stagingDb();
- if(!db||!process.env.STAGING_ADMIN_EMAIL)return null;
+ if(!db)return {db:null,reason:'STAGING_DB_UNAVAILABLE'};
+ const expected=process.env.STAGING_ADMIN_EMAIL?.trim().toLowerCase();
+ if(!expected)return {db:null,reason:'ADMIN_EMAIL_MISSING'};
  const header=req.headers.get('authorization')||'';
- if(!/^Bearer [^ ]{20,}$/.test(header))return null;
+ if(!/^Bearer [^ ]{20,}$/.test(header))return {db:null,reason:'TOKEN_MISSING'};
  const {data,error}=await db.auth.getUser(header.slice(7));
- if(error||!data.user||data.user.email?.toLowerCase()!==process.env.STAGING_ADMIN_EMAIL.toLowerCase())return null;
- return db;
+ if(error||!data.user)return {db:null,reason:'TOKEN_INVALID'};
+ if(data.user.email?.trim().toLowerCase()!==expected)return {db:null,reason:'EMAIL_NOT_AUTHORIZED'};
+ return {db,reason:null};
 }
 export async function GET(req:NextRequest){
- const db=await authenticated(req);if(!db)return NextResponse.json({error:'Not authorized / staging admin not configured'},{status:403,headers});
+ const auth=await authenticated(req);if(!auth.db)return NextResponse.json({error:'Admin authorization failed',code:auth.reason},{status:403,headers});const db=auth.db;
  const {data,error}=await db.from('presenter_links').select('id,label,created_at,revoked_at').order('created_at',{ascending:false});
  if(error)return NextResponse.json({error:'Could not list presenters'},{status:503,headers});
  return NextResponse.json({presenters:data||[]},{headers});
 }
 export async function POST(req:NextRequest){
- const db=await authenticated(req);if(!db)return NextResponse.json({error:'Not authorized / staging admin not configured'},{status:403,headers});
+ const auth=await authenticated(req);if(!auth.db)return NextResponse.json({error:'Admin authorization failed',code:auth.reason},{status:403,headers});const db=auth.db;
  let body:unknown;try{body=await req.json()}catch{return NextResponse.json({error:'Invalid request'},{status:400,headers})}
  if(!body||typeof body!=='object')return NextResponse.json({error:'Invalid request'},{status:400,headers});
  const input=body as Record<string,unknown>;
