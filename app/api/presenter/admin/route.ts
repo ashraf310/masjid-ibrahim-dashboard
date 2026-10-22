@@ -35,6 +35,26 @@ export async function POST(req:NextRequest){
   const base=new URL(req.url).origin;
   return NextResponse.json({presenter:data,link:base+'/presenter#token='+secret,notice:'Copy now: this link cannot be recovered later.'},{status:201,headers});
  }
+ if(input.action==='status'){
+  const {data,error}=await db.from('presentations').select('id,title,state,created_at,source_format').limit(1).maybeSingle();
+  if(error)return NextResponse.json({error:'Unable to retrieve presentation'},{status:503,headers});
+  return NextResponse.json({presentation:data||null},{headers});
+ }
+ if(input.action==='clear'){
+  const id=typeof input.id==='string'?input.id:'';
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))return NextResponse.json({error:'Invalid presentation ID'},{status:400,headers});
+  const {data:item,error:lookupError}=await db.from('presentations').select('id,state,source_format').eq('id',id).maybeSingle();
+  if(lookupError||!item)return NextResponse.json({error:'Presentation not found'},{status:404,headers});
+  if(item.state==='live')return NextResponse.json({error:'End a live presentation before clearing'},{status:409,headers});
+  const {data:slides,error:slidesError}=await db.from('presentation_slides').select('image_path').eq('presentation_id',id);
+  if(slidesError)return NextResponse.json({error:'Unable to verify slide assets'},{status:503,headers});
+  const {error:originalError}=await db.storage.from('presentation-originals').remove([id+'/source.'+item.source_format]);
+  if(originalError)return NextResponse.json({error:'Cannot remove original file'},{status:503,headers});
+  if(slides?.length){const {error:slideError}=await db.storage.from('presentation-slides').remove(slides.map(s=>s.image_path));if(slideError)return NextResponse.json({error:'Cannot remove converted slides'},{status:503,headers});}
+  const {error:deleteError}=await db.from('presentations').delete().eq('id',id).neq('state','live');
+  if(deleteError)return NextResponse.json({error:'Failed to release presentation slot'},{status:503,headers});
+  return NextResponse.json({ok:true},{headers});
+ }
  if(input.action==='revoke'){
   const id=typeof input.id==='string'?input.id:'';
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))return NextResponse.json({error:'Invalid presenter ID'},{status:400,headers});
