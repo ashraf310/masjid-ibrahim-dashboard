@@ -1,0 +1,42 @@
+'use client';
+import {useEffect,useState} from 'react';
+import {validatePresentationFile} from '../../lib/presentation-validation';
+type Session={presenter:{label:string};capabilities:{upload:boolean;live:boolean}};
+export default function Presenter(){
+ const [token,setToken]=useState('');
+ const [session,setSession]=useState<Session|null>(null);
+ const [status,setStatus]=useState('Checking your presenter link...');
+ const [file,setFile]=useState<File|null>(null);
+ const [busy,setBusy]=useState(false);
+ useEffect(()=>{
+  // Token in URL fragment is not sent to the web server in the HTTP request.
+  // Do not persist it in localStorage, analytics or query strings.
+  const fragment=new URLSearchParams(window.location.hash.replace(/^#/,''));const secret=fragment.get('token')||'';
+  window.history.replaceState(null,'',window.location.pathname);
+  if(!/^[a-zA-Z0-9_-]{32,128}$/.test(secret)){setStatus('Open your personal presenter link to continue.');return}
+  setToken(secret);
+  fetch('/api/presenter/session',{headers:{Authorization:'Bearer '+secret},cache:'no-store'}).then(async response=>{
+   if(!response.ok)throw new Error(response.status===503?'Presenter access is not enabled in staging yet.':'Link is invalid or has been revoked.');
+   const result=await response.json() as Session;setSession(result);setStatus('Presenter link verified.');
+  }).catch(e=>setStatus(e instanceof Error?e.message:'Unable to verify presenter link'));
+ },[]);
+ async function upload(){
+  if(!file||!token||busy)return;
+  const validation=validatePresentationFile(file);if(!validation.ok){setStatus(validation.error);return;}
+  setBusy(true);
+  try{
+   setStatus('Requesting secure upload...');
+   const response=await fetch('/api/presenter/prepare',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({title:file.name.replace(/\.(pptx|pdf)$/i,''),format:validation.format,bytes:file.size})});
+   const result=await response.json();
+   if(!response.ok)throw new Error(typeof result.error==='string'?result.error:'Upload authorization failed');
+   setStatus('Uploading securely...');
+   // Signed URL is specific to this file and generated server-side for this presentation.
+   const put=await fetch(result.upload.signedUrl,{method:'PUT',headers:{'Content-Type':validation.format==='pdf'?'application/pdf':'application/vnd.openxmlformats-officedocument.presentationml.presentation'},body:file});
+   if(!put.ok)throw new Error('Upload failed. The presentation slot may need clearing by an administrator.');
+   setStatus('Upload complete. Slide conversion and presenter playback are not yet enabled.');
+  }catch(e){setStatus(e instanceof Error?e.message:'Upload failed')}finally{setBusy(false)}
+ }
+ return <main style={{background:'#081d39',color:'#f9f5ea',minHeight:'100vh',fontFamily:'Arial,sans-serif',padding:'5vw'}}><div style={{maxWidth:760,margin:'auto'}}><p style={{color:'#e3bf7e'}}>MASJID IBRAHIM · STAGING</p><h1>Presenter Portal</h1><p role="status" style={{background:'#12395c',padding:18,borderRadius:9}}>{status}</p>
+ {session&&<section style={{background:'#12395c',padding:24,borderRadius:12}}><h2>Welcome, {session.presenter.label}</h2><label htmlFor="f">Choose a PDF or PowerPoint file (maximum 50 MB)</label><br/><input id="f" type="file" accept=".pdf,.pptx" style={{marginTop:15,maxWidth:'100%'}} onChange={e=>{const selected=e.target.files?.[0]||null;setFile(selected);if(selected){const v=validatePresentationFile(selected);setStatus(v.ok?'File ready for upload.':v.error)}}}/><br/><button type="button" onClick={upload} disabled={!file||busy||!session.capabilities.upload} style={{marginTop:20,padding:'12px 20px',border:0,borderRadius:7,background:'#e2bb6e',color:'#081d39',fontWeight:'bold',opacity:(!file||busy||!session.capabilities.upload)?0.5:1}}>{busy?'Uploading...':'Upload presentation'}</button><p style={{color:'#c9d8e8'}}>Slides and private presenter notes become available after conversion is implemented and tested.</p></section>}
+ <p style={{fontSize:13,color:'#bbcada',marginTop:35}}>Do not share your private presenter link. This staging application cannot control the Masjid TVs.</p></div></main>
+}
