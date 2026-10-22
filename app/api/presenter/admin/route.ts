@@ -1,11 +1,11 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {randomBytes,createHash} from 'node:crypto';
-import {stagingDb} from '../../../../lib/staging-presenter-server';
+import {stagingDbStatus} from '../../../../lib/staging-presenter-server';
 export const runtime='nodejs';export const dynamic='force-dynamic';
 const headers={'Cache-Control':'no-store'};
 async function authenticated(req:NextRequest){
- const db=stagingDb();
- if(!db)return {db:null,reason:'STAGING_DB_UNAVAILABLE'};
+ const {db,reason}=stagingDbStatus();
+ if(!db)return {db:null,reason:reason||'STAGING_DB_UNAVAILABLE'};
  const expected=process.env.STAGING_ADMIN_EMAIL?.trim().toLowerCase();
  if(!expected)return {db:null,reason:'ADMIN_EMAIL_MISSING'};
  const header=req.headers.get('authorization')||'';
