@@ -1,0 +1,25 @@
+'use client';
+import {useEffect,useState} from 'react';
+import {createClient, type SupabaseClient} from '@supabase/supabase-js';
+type Presenter={id:string;label:string;created_at:string;revoked_at:string|null};
+const url=process.env.NEXT_PUBLIC_STAGING_SUPABASE_URL;
+const key=process.env.NEXT_PUBLIC_STAGING_SUPABASE_PUBLISHABLE_KEY;
+export default function PresenterManagement(){
+ const [client,setClient]=useState<SupabaseClient|null>(null),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[jwt,setJwt]=useState(''),[label,setLabel]=useState(''),[presenters,setPresenters]=useState<Presenter[]>([]),[link,setLink]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
+ useEffect(()=>{if(!url||!key){setNotice('Staging browser authentication is not configured.');return;}const c=createClient(url,key);setClient(c);c.auth.getSession().then(x=>setJwt(x.data.session?.access_token||''));const {data:{subscription}}=c.auth.onAuthStateChange((_event,session)=>setJwt(session?.access_token||''));return()=>subscription.unsubscribe()},[]);
+ async function auth(){if(!client)return;setBusy(true);try{const {error}=await client.auth.signInWithPassword({email,password});if(error)throw error;setPassword('');setNotice('Signed in.')}catch(e){setNotice(e instanceof Error?e.message:'Sign-in failed')}finally{setBusy(false)}}
+ async function call(action:'list'|'create'|'revoke',id?:string){
+  if(!client)return;setBusy(true);try{const {data:{session}}=await client.auth.getSession();if(!session)throw Error('Sign in first');
+   const response=await fetch('/api/presenter/admin',{method:action==='list'?'GET':'POST',headers:{Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},...(action==='list'?{}:{body:JSON.stringify(action==='create'?{action,label}:{action,id})})});
+   const result=await response.json();if(!response.ok)throw Error(result.error||'Request failed');
+   if(action==='create'){setLink(result.link);setLabel('');setNotice('Presenter link created. Copy it now; it cannot be recovered later.')}
+   else if(action==='revoke')setNotice('Presenter link revoked.');
+   if(action==='list')setPresenters(result.presenters||[]);
+   else{const list=await fetch('/api/presenter/admin',{headers:{Authorization:'Bearer '+session.access_token}});if(list.ok)setPresenters((await list.json()).presenters||[])}
+  }catch(e){setNotice(e instanceof Error?e.message:'Action failed')}finally{setBusy(false)}
+ }
+ return <main style={{fontFamily:'Arial,sans-serif',minHeight:'100vh',background:'#091e3b',color:'#f4f2ea',padding:'5vw'}}><div style={{maxWidth:850,margin:'auto'}}><p style={{color:'#dcbb76'}}>MASJID IBRAHIM · STAGING ADMIN</p><h1>Presenter Management</h1><p style={{color:'#cbd7e6'}}>Only the configured staging Supabase administrator can create or revoke speaker links.</p><p role="status" style={{padding:14,background:'#183d62',borderRadius:8}}>{notice||'Ready'}</p>
+ {!jwt?<section style={{padding:22,background:'#123355',borderRadius:12}}><h2>Admin sign in</h2><form onSubmit={e=>{e.preventDefault();void auth()}}><label>Email <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required style={{display:'block',padding:10,margin:'8px 0 15px',width:'min(90%,400px)'}}/></label><label>Password <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required style={{display:'block',padding:10,margin:'8px 0 15px',width:'min(90%,400px)'}}/></label><button disabled={busy||!client}>Sign in</button></form></section>:
+ <><section style={{background:'#123355',borderRadius:12,padding:22,marginBottom:20}}><h2>Create presenter link</h2><input placeholder="Speaker's name" value={label} onChange={e=>setLabel(e.target.value)} maxLength={100} style={{padding:10,width:'min(90%,400px)'}}/> <button disabled={busy||!label.trim()} onClick={()=>void call('create')}>Create private link</button>{link&&<div style={{marginTop:16}}><label>Copy this link once and share it privately:</label><textarea readOnly value={link} rows={3} style={{width:'100%',marginTop:8}}/><button onClick={()=>void navigator.clipboard.writeText(link)}>Copy link</button><button onClick={()=>setLink('')}>Hide link</button></div>}</section><section style={{background:'#123355',borderRadius:12,padding:22}}><h2>Presenter links</h2><button disabled={busy} onClick={()=>void call('list')}>Refresh list</button>{presenters.map(p=><div key={p.id} style={{padding:'16px 0',borderBottom:'1px solid #42607a',display:'flex',justifyContent:'space-between',gap:10}}><span>{p.label} — {p.revoked_at?'Revoked':'Active'}</span>{!p.revoked_at&&<button disabled={busy} onClick={()=>{if(confirm('Revoke access for '+p.label+'?'))void call('revoke',p.id)}}>Revoke</button>}</div>)}</section><button onClick={()=>void client?.auth.signOut()} style={{marginTop:30}}>Sign out</button></>}
+ <style jsx>{`button{background:#e1bd77;border:0;border-radius:6;padding:10px 13px;margin-right:9px;cursor:pointer;color:#09203f;font-weight:bold}button:disabled{opacity:.55}input,textarea{border-radius:5px;border:1px solid #8296aa}`}</style></div></main>
+}
