@@ -5,7 +5,7 @@ export const dynamic='force-dynamic';
 const headers={'Cache-Control':'no-store'};
 export async function GET(req:NextRequest){
  const db=stagingDb();
- if(!db||process.env.ENABLE_STAGING_PRESENTER_API!=='true')return NextResponse.json({error:'Presenter API unavailable'}, {status:503,headers});
+ if(!db)return NextResponse.json({error:'Presenter API unavailable'}, {status:503,headers});
  const token=bearerToken(req.headers.get('authorization'));
  if(!token)return NextResponse.json({error:'Unauthorized'},{status:401,headers});
  const {data,error}=await db.from('presenter_links').select('id,label,revoked_at').eq('token_hash',tokenDigest(token)).maybeSingle();
