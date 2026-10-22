@@ -11,5 +11,5 @@ export async function GET(req:NextRequest){
  const {data,error}=await db.from('presenter_links').select('id,label,revoked_at').eq('token_hash',tokenDigest(token)).maybeSingle();
  if(error)return NextResponse.json({error:'Unable to verify presenter'},{status:503,headers});
  if(!data||data.revoked_at)return NextResponse.json({error:'Unauthorized'},{status:401,headers});
- return NextResponse.json({presenter:{label:data.label},capabilities:{upload:false,live:false}}, {headers});
+ return NextResponse.json({presenter:{label:data.label},capabilities:{upload:process.env.ENABLE_STAGING_PRESENTER_UPLOADS==='true',live:false}}, {headers});
 }
