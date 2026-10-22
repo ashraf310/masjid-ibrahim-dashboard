@@ -33,7 +33,10 @@ export default function Presenter(){
    // Signed URL is specific to this file and generated server-side for this presentation.
    const put=await fetch(result.upload.signedUrl,{method:'PUT',headers:{'Content-Type':validation.format==='pdf'?'application/pdf':'application/vnd.openxmlformats-officedocument.presentationml.presentation'},body:file});
    if(!put.ok)throw new Error('Upload failed. The presentation slot may need clearing by an administrator.');
-   setStatus('Upload complete. Slide conversion and presenter playback are not yet enabled.');
+   const done=await fetch('/api/presenter/complete',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({presentationId:result.presentationId})});
+   const finished=await done.json();
+   if(!done.ok)throw new Error(finished.error||'Unable to verify uploaded file');
+   setStatus('File saved privately. Presentation conversion is the next step.');
   }catch(e){setStatus(e instanceof Error?e.message:'Upload failed')}finally{setBusy(false)}
  }
  return <main style={{background:'#081d39',color:'#f9f5ea',minHeight:'100vh',fontFamily:'Arial,sans-serif',padding:'5vw'}}><div style={{maxWidth:760,margin:'auto'}}><p style={{color:'#e3bf7e'}}>MASJID IBRAHIM · STAGING</p><h1>Presenter Portal</h1><p role="status" style={{background:'#12395c',padding:18,borderRadius:9}}>{status}</p>
