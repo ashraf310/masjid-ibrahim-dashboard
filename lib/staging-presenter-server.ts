@@ -2,17 +2,21 @@ import 'server-only';
 import {createHash,timingSafeEqual} from 'node:crypto';
 import {createClient} from '@supabase/supabase-js';
 const STAGING_PROJECT_ID='prj_TX0ZefGHlJUidnjfSMYCXIjm6NuZ';
-export function stagingDb(){
- const projectId=process.env.VERCEL_PROJECT_ID;
+export function stagingDbStatus(){
+ const projectId=process.env.VERCEL_PROJECT_ID||'';
  const deploymentUrl=process.env.VERCEL_URL||'';
- // Runtime may omit VERCEL_PROJECT_ID; check trusted deployment hostname instead.
- if(projectId){if(projectId!==STAGING_PROJECT_ID)return null;}
- else if(!/^masjid-ibrahim-staging(?:-[a-z0-9-]+)?\.vercel\.app$/.test(deploymentUrl))return null;
- const url=process.env.SUPABASE_URL;
- const key=process.env.SUPABASE_SERVICE_ROLE_KEY;
- if(!url||!key||!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url))return null;
- return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+ const validProject=projectId===STAGING_PROJECT_ID;
+ const validHost=/^masjid-ibrahim-staging(?:-[a-z0-9-]+)?\\.vercel\\.app$/.test(deploymentUrl);
+ if(!validProject&&!validHost)return {db:null,reason:'STAGING_PROJECT_CHECK_FAILED'};
+ const url=process.env.SUPABASE_URL?.trim();
+ const key=process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+ if(!url)return {db:null,reason:'SUPABASE_URL_MISSING'};
+ if(!/^https:\\/\\/[a-z0-9-]+\\.supabase\\.co\\/?$/.test(url))return {db:null,reason:'SUPABASE_URL_INVALID'};
+ if(!key)return {db:null,reason:'SUPABASE_KEY_MISSING'};
+ try{return {db:createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}}),reason:null};}
+ catch{return {db:null,reason:'SUPABASE_CLIENT_ERROR'};}
 }
+export function stagingDb(){return stagingDbStatus().db;}
 export function bearerToken(header:string|null){
  if(!header||!/^Bearer [a-zA-Z0-9_-]{32,128}$/.test(header))return null;
  return header.slice(7);
