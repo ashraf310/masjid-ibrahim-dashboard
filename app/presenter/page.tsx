@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
+import LocalPdfSlides from '../../components/LocalPdfSlides';
 import {validatePresentationFile} from '../../lib/presentation-validation';
 type Session={presenter:{label:string};capabilities:{upload:boolean;live:boolean}};
 export default function Presenter(){
@@ -44,5 +45,6 @@ export default function Presenter(){
  }
  return <main style={{background:'#081d39',color:'#f9f5ea',minHeight:'100vh',fontFamily:'Arial,sans-serif',padding:'5vw'}}><div style={{maxWidth:760,margin:'auto'}}><p style={{color:'#e3bf7e'}}>MASJID IBRAHIM · STAGING</p><h1>Presenter Portal</h1><p role="status" style={{background:'#12395c',padding:18,borderRadius:9}}>{status}</p>
  {session&&<section style={{background:'#12395c',padding:24,borderRadius:12}}><h2>Welcome, {session.presenter.label}</h2><label htmlFor="f">Choose a PDF or PowerPoint file (maximum 50 MB)</label><br/><input id="f" type="file" accept=".pdf,.pptx" style={{marginTop:15,maxWidth:'100%'}} onChange={e=>{const selected=e.target.files?.[0]||null;setFile(selected);if(selected){const v=validatePresentationFile(selected);setStatus(v.ok?'File ready for upload.':v.error)}}}/><br/><button type="button" onClick={upload} disabled={!file||busy||!session.capabilities.upload} style={{marginTop:20,padding:'12px 20px',border:0,borderRadius:7,background:'#e2bb6e',color:'#081d39',fontWeight:'bold',opacity:(!file||busy||!session.capabilities.upload)?0.5:1}}>{busy?'Uploading...':'Upload presentation'}</button><p style={{color:'#c9d8e8'}}>Slides and private presenter notes become available after conversion is implemented and tested.</p></section>}
+ {session&&file?.name.toLowerCase().endsWith('.pdf')&&<LocalPdfSlides file={file}/>}
  <p style={{fontSize:13,color:'#bbcada',marginTop:35}}>Do not share your private presenter link. This staging application cannot control the Masjid TVs.</p></div></main>
 }
