@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 export type PptxInfo={slides:{number:number;notes:string}[];warnings:string[]};
 function parse(xml:string){const doc=new DOMParser().parseFromString(xml,'application/xml');if(doc.querySelector('parsererror'))throw Error('Invalid PowerPoint XML');return doc}
-function nodes(doc:Document,local:string){return Array.from(doc.getElementsByTagName('*')).filter(x=>x.localName===local)}
+function nodes(doc:Document|Element,local:string){return Array.from(doc.getElementsByTagName('*')).filter(x=>x.localName===local)}
 function resolvePart(base:string,target:string){
  if(target.startsWith('/'))return target.replace(/^\/+/, '');
  const segments=base.split('/');segments.pop();
