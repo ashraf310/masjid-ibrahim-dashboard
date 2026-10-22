@@ -24,11 +24,13 @@ export default function Presenter(){
   if(!file||!token||busy)return;
   const validation=validatePresentationFile(file);if(!validation.ok){setStatus(validation.error);return;}
   setBusy(true);
+  let reservedId:string|null=null;
   try{
    setStatus('Requesting secure upload...');
    const response=await fetch('/api/presenter/prepare',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({title:file.name.replace(/\.(pptx|pdf)$/i,''),format:validation.format,bytes:file.size})});
    const result=await response.json();
    if(!response.ok)throw new Error(typeof result.error==='string'?result.error:'Upload authorization failed');
+   reservedId=result.presentationId;
    setStatus('Uploading securely...');
    // Signed URL is specific to this file and generated server-side for this presentation.
    const put=await fetch(result.upload.signedUrl,{method:'PUT',headers:{'Content-Type':validation.format==='pdf'?'application/pdf':'application/vnd.openxmlformats-officedocument.presentationml.presentation'},body:file});
@@ -36,8 +38,9 @@ export default function Presenter(){
    const done=await fetch('/api/presenter/complete',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({presentationId:result.presentationId})});
    const finished=await done.json();
    if(!done.ok)throw new Error(finished.error||'Unable to verify uploaded file');
+   reservedId=null;
    setStatus('File saved privately. Presentation conversion is the next step.');
-  }catch(e){setStatus(e instanceof Error?e.message:'Upload failed')}finally{setBusy(false)}
+  }catch(e){if(reservedId){try{await fetch('/api/presenter/cancel',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({presentationId:reservedId})})}catch{}}setStatus(e instanceof Error?e.message:'Upload failed')}finally{setBusy(false)}
  }
  return <main style={{background:'#081d39',color:'#f9f5ea',minHeight:'100vh',fontFamily:'Arial,sans-serif',padding:'5vw'}}><div style={{maxWidth:760,margin:'auto'}}><p style={{color:'#e3bf7e'}}>MASJID IBRAHIM · STAGING</p><h1>Presenter Portal</h1><p role="status" style={{background:'#12395c',padding:18,borderRadius:9}}>{status}</p>
  {session&&<section style={{background:'#12395c',padding:24,borderRadius:12}}><h2>Welcome, {session.presenter.label}</h2><label htmlFor="f">Choose a PDF or PowerPoint file (maximum 50 MB)</label><br/><input id="f" type="file" accept=".pdf,.pptx" style={{marginTop:15,maxWidth:'100%'}} onChange={e=>{const selected=e.target.files?.[0]||null;setFile(selected);if(selected){const v=validatePresentationFile(selected);setStatus(v.ok?'File ready for upload.':v.error)}}}/><br/><button type="button" onClick={upload} disabled={!file||busy||!session.capabilities.upload} style={{marginTop:20,padding:'12px 20px',border:0,borderRadius:7,background:'#e2bb6e',color:'#081d39',fontWeight:'bold',opacity:(!file||busy||!session.capabilities.upload)?0.5:1}}>{busy?'Uploading...':'Upload presentation'}</button><p style={{color:'#c9d8e8'}}>Slides and private presenter notes become available after conversion is implemented and tested.</p></section>}
