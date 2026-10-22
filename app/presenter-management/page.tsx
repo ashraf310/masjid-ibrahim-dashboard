@@ -11,7 +11,7 @@ export default function PresenterManagement(){
  async function call(action:'list'|'create'|'revoke',id?:string){
   if(!client)return;setBusy(true);try{const {data:{session}}=await client.auth.getSession();if(!session)throw Error('Sign in first');
    const response=await fetch('/api/presenter/admin',{method:action==='list'?'GET':'POST',headers:{Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},...(action==='list'?{}:{body:JSON.stringify(action==='create'?{action,label}:{action,id})})});
-   const result=await response.json();if(!response.ok)throw Error(result.error||'Request failed');
+   const result=await response.json();if(!response.ok)throw Error((result.error||'Request failed')+(result.code?' ['+result.code+']':''));
    if(action==='create'){setLink(result.link);setLabel('');setNotice('Presenter link created. Copy it now; it cannot be recovered later.')}
    else if(action==='revoke')setNotice('Presenter link revoked.');
    if(action==='list')setPresenters(result.presenters||[]);
