@@ -3,7 +3,11 @@ import {createHash,timingSafeEqual} from 'node:crypto';
 import {createClient} from '@supabase/supabase-js';
 const STAGING_PROJECT_ID='prj_TX0ZefGHlJUidnjfSMYCXIjm6NuZ';
 export function stagingDb(){
- if(process.env.VERCEL_PROJECT_ID!==STAGING_PROJECT_ID) return null;
+ const projectId=process.env.VERCEL_PROJECT_ID;
+ const deploymentUrl=process.env.VERCEL_URL||'';
+ // Runtime may omit VERCEL_PROJECT_ID; check trusted deployment hostname instead.
+ if(projectId){if(projectId!==STAGING_PROJECT_ID)return null;}
+ else if(!/^masjid-ibrahim-staging(?:-[a-z0-9-]+)?\.vercel\.app$/.test(deploymentUrl))return null;
  const url=process.env.SUPABASE_URL;
  const key=process.env.SUPABASE_SERVICE_ROLE_KEY;
  if(!url||!key||!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url))return null;
