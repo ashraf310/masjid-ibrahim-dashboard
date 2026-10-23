@@ -105,6 +105,8 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId}:
  <section style={{marginTop:20,padding:16,border:'1px solid #d2af71',borderRadius:8}}>
  <h3>Staging audience test (not connected to Masjid TVs)</h3>
  <p style={{fontSize:13}}>Your converted slide images, but never your speaker notes, will be uploaded to private staging storage for this test.</p>
+ {!presentationId&&<p role="status" style={{color:'#ffd58d'}}>To enable audience preview, first upload this PPTX using the <strong>Upload presentation</strong> button at the top of the Presenter Portal. Local conversion and uploading are separate steps. If another file is already uploaded, select Remove / Replace Presentation first.</p>}
+ {presentationId&&pdf&&pageCount!==total&&<p role="status" style={{color:'#ffd58d'}}>Converted slide count does not match PowerPoint; please reconvert before publishing.</p>}
  <button type="button" disabled={publishing||!pdf||!presentationId||pageCount!==total||liveMode} onClick={()=>void publish()}>{publishing?'Publishing...':'Prepare slides for audience preview'}</button>
  {audiencePath&&<p><a style={{color:'#e2bd77',textDecoration:'underline'}} href={audiencePath} target="_blank" rel="noopener noreferrer">Open private staging audience preview</a> — share only with test viewers.</p>}
  {audiencePath&&!liveMode&&<button type="button" disabled={publishing} onClick={()=>void start()}>Start staging presentation</button>}
