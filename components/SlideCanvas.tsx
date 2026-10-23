@@ -1,7 +1,6 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
-type PdfModule=typeof import('pdfjs-dist');
-type DocumentType=Awaited<ReturnType<PdfModule['getDocument']>['promise']>;
+type DocumentType=import('pdfjs-dist').PDFDocumentProxy;
 export default function SlideCanvas({file,page,onPageCount}:{file:File;page:number;onPageCount:(n:number)=>void}){
  const canvas=useRef<HTMLCanvasElement>(null);
  const [doc,setDoc]=useState<DocumentType|null>(null);
@@ -18,7 +17,7 @@ export default function SlideCanvas({file,page,onPageCount}:{file:File;page:numb
  const base=pdfPage.getViewport({scale:1});const scale=Math.min(3,Math.max(1,1920/base.width));const viewport=pdfPage.getViewport({scale});
  const el=canvas.current;if(!el)return;el.width=Math.ceil(viewport.width);el.height=Math.ceil(viewport.height);
  const context=el.getContext('2d');if(!context)return;
- task=pdfPage.render({canvas:el,canvasContext:context,viewport});await task.promise;
+ task=pdfPage.render({canvasContext:context,viewport});await task.promise;
  })().catch(e=>{if(!closed&&(e as {name?:string})?.name!=='RenderingCancelledException')setError('Could not render slide '+page)});
  return()=>{closed=true;task?.cancel()};
  },[doc,page]);
