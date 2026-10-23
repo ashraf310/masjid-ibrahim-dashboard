@@ -5,12 +5,56 @@ import type {PptxInfo} from '../lib/inspect-pptx';
 
 /** Presenter-only preparation: speaker's original PPTX notes + its exported PDF slides.
  * No PDF or notes are broadcast, uploaded or shared from this component. */
-export default function LocalPptxPresenter({file}:{file:File}){
+export default function LocalPptxPresenter({file,presenterToken,presentationId}:{file:File;presenterToken:string;presentationId:string|null}){
  const [info,setInfo]=useState<PptxInfo|null>(null);
  const [error,setError]=useState('');
  const [index,setIndex]=useState(0);
  const [pdf,setPdf]=useState<File|null>(null);
  const [pageCount,setPageCount]=useState<number|null>(null);
+ const [publishing,setPublishing]=useState(false);
+ const [publishMessage,setPublishMessage]=useState('');
+ const [audiencePath,setAudiencePath]=useState('');
+ const [liveMode,setLiveMode]=useState(false);
+ async function liveAction(action:'start'|'advance'|'end'|'ready',slide?:number,total?:number){
+  if(!presentationId||!presenterToken)throw Error('Upload your PPTX first to enable a staging audience preview');
+  const response=await fetch('/api/presenter/live',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+presenterToken},body:JSON.stringify({presentationId,action,slide,total})});
+  const result=await response.json();
+  if(!response.ok)throw Error(result.error||'Cannot update presentation');
+  if(result.audiencePath)setAudiencePath(result.audiencePath);
+  return result;
+ }
+ async function publish(){
+  if(!pdf||!presentationId||!presenterToken||!info||pageCount!==info.slides.length)return;
+  setPublishing(true);setPublishMessage('Preparing slides locally...');
+  try{
+   const pdfjs=await import('pdfjs-dist');
+   pdfjs.GlobalWorkerOptions.workerSrc=new URL('pdfjs-dist/build/pdf.worker.min.mjs',import.meta.url).toString();
+   const document=await pdfjs.getDocument({data:new Uint8Array(await pdf.arrayBuffer())}).promise;
+   try{
+    if(document.numPages!==info.slides.length)throw Error('PDF page count does not match PPTX slide count');
+    if(document.numPages>300)throw Error('Maximum 300 slides for staging preview');
+    for(let i=0;i<document.numPages;i++){
+     setPublishMessage('Publishing slide '+(i+1)+' of '+document.numPages+'...');
+     const page=await document.getPage(i+1);
+     const base=page.getViewport({scale:1});const viewport=page.getViewport({scale:Math.min(2.4,1920/base.width)});
+     const canvas=documentGlobalCanvas();canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+     const context=canvas.getContext('2d');if(!context)throw Error('Canvas unavailable');
+     await page.render({canvasContext:context,viewport}).promise;
+     const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('Image encoding failed')),'image/jpeg',0.85));
+     if(blob.size>2*1024*1024)throw Error('Slide '+(i+1)+' is above the 2 MB staging limit');
+     const response=await fetch('/api/presenter/slide',{method:'POST',headers:{Authorization:'Bearer '+presenterToken,'Content-Type':'image/jpeg','X-Presentation-Id':presentationId,'X-Slide-Number':String(i)},body:blob});
+     if(!response.ok){const result=await response.json();throw Error(result.error||'Slide upload failed')}
+    }
+    await liveAction('ready',undefined,document.numPages);
+    setPublishMessage('Slides ready. Open the audience preview link in another browser/device, then click Start staging presentation.');
+   }finally{await document.destroy()}
+  }catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot publish slides')}
+  finally{setPublishing(false)}
+ }
+ function documentGlobalCanvas(){return window.document.createElement('canvas')}
+ async function start(){try{await liveAction('start');setLiveMode(true);setIndex(0);setPublishMessage('Staging presentation live. Audience sees slides only.')}catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot start')}}
+ async function end(){try{await liveAction('end');setLiveMode(false);setPublishMessage('Staging presentation ended. Audience returned to waiting screen.')}catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot end')}}
+
  const onPageCount=useCallback((n:number)=>setPageCount(n),[]);
  const [converting,setConverting]=useState(false);
  const [convertError,setConvertError]=useState('');
@@ -32,9 +76,9 @@ export default function LocalPptxPresenter({file}:{file:File}){
  useEffect(()=>{const listener=(e:KeyboardEvent)=>{
  if(!info?.slides.length)return;
  const t=e.target as HTMLElement|null;if(t&&(/INPUT|TEXTAREA|SELECT/.test(t.tagName)||t.isContentEditable))return;
- if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();setIndex(v=>Math.min(info.slides.length-1,v+1))}
- if(e.key==='ArrowLeft'){e.preventDefault();setIndex(v=>Math.max(0,v-1))}
- };window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener)},[info]);
+ if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();setIndex(v=>{const n=Math.min(info.slides.length-1,v+1);if(liveMode)void liveAction('advance',n).catch(err=>setPublishMessage(String(err)));return n})}
+ if(e.key==='ArrowLeft'){e.preventDefault();setIndex(v=>{const n=Math.max(0,v-1);if(liveMode)void liveAction('advance',n).catch(err=>setPublishMessage(String(err)));return n})}
+ };window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener)},[info,liveMode,presentationId,presenterToken]);
  const total=info?.slides.length||0;
  return <section style={{marginTop:22,padding:22,background:'#12395c',borderRadius:12}}>
  <h2>PowerPoint Presenter View</h2>
@@ -57,7 +101,16 @@ export default function LocalPptxPresenter({file}:{file:File}){
  </div>
  <div style={{marginTop:16,padding:16,background:'#091f3b',borderRadius:8}}><strong>Private speaker notes</strong><p style={{whiteSpace:'pre-wrap',lineHeight:1.6}}>{info.slides[index]?.notes||'No speaker notes on this slide.'}</p></div>
  <div style={{display:'flex',gap:14,alignItems:'center',marginTop:15}}>
- <button type="button" disabled={index===0} onClick={()=>setIndex(v=>Math.max(0,v-1))}>Previous</button><strong>{index+1} / {total}</strong><button type="button" disabled={index>=total-1} onClick={()=>setIndex(v=>Math.min(total-1,v+1))}>Next</button></div>
+ <button type="button" disabled={index===0} onClick={()=>{const n=Math.max(0,index-1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>Previous</button><strong>{index+1} / {total}</strong><button type="button" disabled={index>=total-1} onClick={()=>{const n=Math.min(total-1,index+1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>Next</button></div>
+ <section style={{marginTop:20,padding:16,border:'1px solid #d2af71',borderRadius:8}}>
+ <h3>Staging audience test (not connected to Masjid TVs)</h3>
+ <p style={{fontSize:13}}>Your converted slide images, but never your speaker notes, will be uploaded to private staging storage for this test.</p>
+ <button type="button" disabled={publishing||!pdf||!presentationId||pageCount!==total||liveMode} onClick={()=>void publish()}>{publishing?'Publishing...':'Prepare slides for audience preview'}</button>
+ {audiencePath&&<p><a style={{color:'#e2bd77',textDecoration:'underline'}} href={audiencePath} target="_blank" rel="noopener noreferrer">Open private staging audience preview</a> — share only with test viewers.</p>}
+ {audiencePath&&!liveMode&&<button type="button" disabled={publishing} onClick={()=>void start()}>Start staging presentation</button>}
+ {liveMode&&<button type="button" onClick={()=>void end()}>End staging presentation</button>}
+ {publishMessage&&<p role="status">{publishMessage}</p>}
+ </section>
  {info.warnings.length>0&&<p style={{color:'#ffcbc4'}}>{info.warnings.join('; ')}</p>}
  <p style={{color:'#bbcada',fontSize:13}}>Private laptop preview only. Slides now render page-by-page at high resolution with the original proportions. TV/PRISM broadcasting is still disabled.</p>
  </>}
