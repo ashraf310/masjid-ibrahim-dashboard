@@ -6,7 +6,7 @@ import officialLogo from '../../Masjid Ibrahim Logo_official_transp.png';
 const zone='America/Chicago';
 function day(d:Date){const x=new Intl.DateTimeFormat('en-US',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);const val=(k:string)=>x.find(v=>v.type===k)?.value||'';return val('year')+'-'+val('month')+'-'+val('day')}
 function seconds(d:Date){const x=new Intl.DateTimeFormat('en-US',{timeZone:zone,hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(d);const v=(k:string)=>Number(x.find(y=>y.type===k)?.value||0);return v('hour')*3600+v('minute')*60+v('second')}
-function toSec(v:string){if(!/^([01]?\\d|2[0-3]):[0-5]\\d$/.test(v))return null;const [h,m]=v.split(':').map(Number);return h*3600+m*60}
+function toSec(v:string){if(!/^([01]?\d|2[0-3]):[0-5]\d$/.test(v))return null;const [h,m]=v.split(':').map(Number);return h*3600+m*60}
 function fmt(v:string){if(!v)return '—';const [h,m]=v.split(':').map(Number);return (h%12||12)+':'+String(m).padStart(2,'0')+' '+(h<12?'AM':'PM')}
 const arabic:Record<string,string>={Fajr:'الفجر',Dhuhr:'الظهر',Asr:'العصر',Maghrib:'المغرب',Isha:'العشاء'};
 export default function SalahTimings(){
