@@ -5,7 +5,7 @@ import type {PptxInfo} from '../lib/inspect-pptx';
 
 /** Presenter-only preparation: speaker's original PPTX notes + its exported PDF slides.
  * No PDF or notes are broadcast, uploaded or shared from this component. */
-export default function LocalPptxPresenter({file,presenterToken,presentationId,ensureUploaded}:{file:File;presenterToken:string;presentationId:string|null;ensureUploaded:()=>Promise<string>}){
+export default function LocalPptxPresenter({file,presenterToken,presentationId,ensureUploaded,onEnded}:{file:File;presenterToken:string;presentationId:string|null;ensureUploaded:()=>Promise<string>;onEnded:()=>void}){
  const [info,setInfo]=useState<PptxInfo|null>(null);
  const [error,setError]=useState('');
  const [index,setIndex]=useState(0);
@@ -63,7 +63,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  }
  function documentGlobalCanvas(){return window.document.createElement('canvas')}
  async function start(){try{await liveAction('start');setLiveMode(true);setIndex(0);setPublishMessage('Staging presentation live. Audience sees slides only.')}catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot start')}}
- async function end(){try{await liveAction('end');setLiveMode(false);setPublishMessage('Staging presentation ended. Audience returned to waiting screen.')}catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot end')}}
+ async function end(){try{await liveAction('end');setLiveMode(false);setPublishMessage('Presentation ended and cleared.');onEnded()}catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot end')}}
 
  const onPageCount=useCallback((n:number)=>setPageCount(n),[]);
  const [converting,setConverting]=useState(false);
