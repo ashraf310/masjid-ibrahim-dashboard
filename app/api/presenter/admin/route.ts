@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {randomBytes,createHash} from 'node:crypto';
 import {stagingDbStatus} from '../../../../lib/staging-presenter-server';
+import {deletePresentationAssets} from '../../../../lib/delete-staging-presentation';
 export const runtime='nodejs';export const dynamic='force-dynamic';
 const headers={'Cache-Control':'no-store'};
 async function authenticated(req:NextRequest){
@@ -46,21 +47,26 @@ export async function POST(req:NextRequest){
   const {data:item,error:lookupError}=await db.from('presentations').select('id,state,source_format').eq('id',id).maybeSingle();
   if(lookupError||!item)return NextResponse.json({error:'Presentation not found'},{status:404,headers});
   if(item.state==='live')return NextResponse.json({error:'End a live presentation before clearing'},{status:409,headers});
-  const {data:slides,error:slidesError}=await db.from('presentation_slides').select('image_path').eq('presentation_id',id);
-  if(slidesError)return NextResponse.json({error:'Unable to verify slide assets'},{status:503,headers});
-  const {error:originalError}=await db.storage.from('presentation-originals').remove([id+'/source.'+item.source_format]);
-  if(originalError)return NextResponse.json({error:'Cannot remove original file'},{status:503,headers});
-  if(slides?.length){const {error:slideError}=await db.storage.from('presentation-slides').remove(slides.map(s=>s.image_path));if(slideError)return NextResponse.json({error:'Cannot remove converted slides'},{status:503,headers});}
-  const {error:deleteError}=await db.from('presentations').delete().eq('id',id).neq('state','live');
-  if(deleteError)return NextResponse.json({error:'Failed to release presentation slot'},{status:503,headers});
+  try{await deletePresentationAssets(db,id)}catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Cleanup failed'},{status:503,headers})}
   return NextResponse.json({ok:true},{headers});
  }
  if(input.action==='revoke'){
   const id=typeof input.id==='string'?input.id:'';
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))return NextResponse.json({error:'Invalid presenter ID'},{status:400,headers});
-  const {data,error}=await db.from('presenter_links').update({revoked_at:new Date().toISOString()}).eq('id',id).is('revoked_at',null).select('id').maybeSingle();
-  if(error)return NextResponse.json({error:'Unable to revoke presenter'},{status:503,headers});
-  return NextResponse.json({ok:true,revoked:Boolean(data)},{headers});
+  const {data:presenter,error:lookupError}=await db.from('presenter_links').select('id,revoked_at').eq('id',id).maybeSingle();
+  if(lookupError)return NextResponse.json({error:'Cannot locate presenter'},{status:503,headers});
+  if(!presenter)return NextResponse.json({error:'Presenter not found'},{status:404,headers});
+  // Revoke first so uploads and control requests are blocked during cleanup.
+  const {error:revokeError}=await db.from('presenter_links').update({revoked_at:new Date().toISOString()}).eq('id',id);
+  if(revokeError)return NextResponse.json({error:'Cannot revoke presenter'},{status:503,headers});
+  const {data:items,error:itemsError}=await db.from('presentations').select('id').eq('presenter_id',id);
+  if(itemsError)return NextResponse.json({error:'Link revoked, but could not check presentations for cleanup'},{status:503,headers});
+  try{for(const item of items||[])await deletePresentationAssets(db,item.id)}
+  catch(e){return NextResponse.json({error:'Link revoked, but some presentation data remains. Retry revoke to clean it up: '+(e instanceof Error?e.message:'Cleanup failed')},{status:503,headers})}
+  // Erase token hash and presenter record once child records have been removed.
+  const {error:removeError}=await db.from('presenter_links').delete().eq('id',id);
+  if(removeError)return NextResponse.json({error:'Presenter revoked and files cleared, but the link record could not be removed'},{status:503,headers});
+  return NextResponse.json({ok:true,revoked:true,deleted:true},{headers});
  }
  return NextResponse.json({error:'Unsupported action'},{status:400,headers});
 }
