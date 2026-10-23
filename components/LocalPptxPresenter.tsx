@@ -5,7 +5,7 @@ import type {PptxInfo} from '../lib/inspect-pptx';
 
 /** Presenter-only preparation: speaker's original PPTX notes + its exported PDF slides.
  * No PDF or notes are broadcast, uploaded or shared from this component. */
-export default function LocalPptxPresenter({file,presenterToken,presentationId,ensureUploaded}:{file:File;presenterToken:string;presentationId:string|null;ensureUploaded:()=>Promise<string>}){
+export default function LocalPptxPresenter({file,presenterToken,presentationId,presentationState,ensureUploaded}:{file:File;presenterToken:string;presentationId:string|null;presentationState:string|null;ensureUploaded:()=>Promise<string>}){
  const [info,setInfo]=useState<PptxInfo|null>(null);
  const [error,setError]=useState('');
  const [index,setIndex]=useState(0);
@@ -18,7 +18,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  const [audiencePath,setAudiencePath]=useState('');
  const [liveMode,setLiveMode]=useState(false);
  const [speakerMode,setSpeakerMode]=useState(false);
- async function liveAction(action:'start'|'advance'|'end'|'ready',slide?:number,total?:number,idOverride?:string){
+ async function liveAction(action:'start'|'advance'|'end'|'ready'|'link',slide?:number,total?:number,idOverride?:string){
   const targetId=idOverride||resolvedId;
   if(!targetId||!presenterToken)throw Error('Presentation upload required');
   const response=await fetch('/api/presenter/live',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+presenterToken},body:JSON.stringify({presentationId:targetId,action,slide,total})});
@@ -27,6 +27,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
   if(result.audiencePath)setAudiencePath(result.audiencePath);
   return result;
  }
+ async function restoreLink(){try{await liveAction('link');setPublishMessage('Audience preview link restored. You do not need to republish these slides.')}catch(e){setPublishMessage(e instanceof Error?e.message:'Unable to recover audience link')}}
  async function publish(){
   if(!pdf||!presenterToken||!info||pageCount!==info.slides.length)return;
   setPublishing(true);setPublishMessage('Preparing slides locally...');
@@ -114,7 +115,9 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  <p style={{fontSize:13}}>Your converted slide images, but never your speaker notes, will be uploaded to private staging storage for this test.</p>
  {!presentationId&&<p role="status" style={{color:'#ffd58d'}}>When you click Prepare slides, this PPTX will be uploaded automatically if it is not already stored. Your presenter link remains unchanged.</p>}
  {presentationId&&pdf&&pageCount!==total&&<p role="status" style={{color:'#ffd58d'}}>Converted slide count does not match PowerPoint; please reconvert before publishing.</p>}
- <button type="button" disabled={publishing||!pdf||pageCount!==total||liveMode} onClick={()=>void publish()}>{publishing?'Publishing...':'Prepare slides for audience preview'}</button>
+ {presentationId&&['ready','live'].includes(presentationState||'')&&<button type="button" onClick={()=>void restoreLink()}>Get existing audience preview link</button>}
+ {presentationState==='ended'&&<p style={{color:'#ffcf9d'}}>This presentation was ended. Use Remove / Replace when available, or ask Admin to clear the presentation slot before a new test.</p>}
+ <button type="button" disabled={publishing||!pdf||pageCount!==total||liveMode||presentationState==='ended'||presentationState==='live'} onClick={()=>void publish()}>{publishing?'Publishing...':'Prepare slides for audience preview'}</button>
  {audiencePath&&<p><a style={{color:'#e2bd77',textDecoration:'underline'}} href={audiencePath} target="_blank" rel="noopener noreferrer">Open private staging audience preview</a> — share only with test viewers.</p>}
  {audiencePath&&!liveMode&&<button type="button" disabled={publishing} onClick={()=>void start()}>Start staging presentation</button>}
  {liveMode&&<button type="button" onClick={()=>void end()}>End staging presentation</button>}
