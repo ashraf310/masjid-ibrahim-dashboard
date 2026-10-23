@@ -17,6 +17,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  const [publishMessage,setPublishMessage]=useState('');
  const [audiencePath,setAudiencePath]=useState('');
  const [liveMode,setLiveMode]=useState(false);
+ const [speakerMode,setSpeakerMode]=useState(false);
  async function liveAction(action:'start'|'advance'|'end'|'ready',slide?:number,total?:number,idOverride?:string){
   const targetId=idOverride||resolvedId;
   if(!targetId||!presenterToken)throw Error('Presentation upload required');
@@ -40,12 +41,13 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
     for(let i=0;i<document.numPages;i++){
      setPublishMessage('Publishing slide '+(i+1)+' of '+document.numPages+'...');
      const page=await document.getPage(i+1);
-     const base=page.getViewport({scale:1});const viewport=page.getViewport({scale:Math.min(2.4,1920/base.width)});
+     const base=page.getViewport({scale:1});const viewport=page.getViewport({scale:Math.min(4,2880/base.width)});
      const canvas=documentGlobalCanvas();canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
      const context=canvas.getContext('2d');if(!context)throw Error('Canvas unavailable');
      await page.render({canvasContext:context,viewport}).promise;
-     const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('Image encoding failed')),'image/jpeg',0.85));
-     if(blob.size>2*1024*1024)throw Error('Slide '+(i+1)+' is above the 2 MB staging limit');
+     let blob:Blob|null=null;
+     for(const quality of [0.94,0.88,0.8,0.7]){blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('Image encoding failed')),'image/jpeg',quality));if(blob.size<=2*1024*1024)break;}
+     if(!blob||blob.size>2*1024*1024)throw Error('Slide '+(i+1)+' exceeds staging size limit even after compression');
      const response=await fetch('/api/presenter/slide',{method:'POST',headers:{Authorization:'Bearer '+presenterToken,'Content-Type':'image/jpeg','X-Presentation-Id':id,'X-Slide-Number':String(i)},body:blob});
      if(!response.ok){const result=await response.json();throw Error(result.error||'Slide upload failed')}
     }
@@ -86,6 +88,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  const total=info?.slides.length||0;
  return <section style={{marginTop:22,padding:22,background:'#12395c',borderRadius:12}}>
  <h2>PowerPoint Presenter View</h2>
+ <button type="button" disabled={!pdf||pageCount!==total} onClick={()=>setSpeakerMode(true)}>Open full-screen speaker view</button>
  <p style={{color:'#e0c68d'}}>The PPTX provides private speaker notes. To see accurate slide graphics, run the local PowerPoint conversion helper and click Convert PPTX automatically. Manual PDF export remains a fallback. Both files stay on this laptop for this preview.</p>
  {!info&&!error&&<p>Reading PowerPoint slide order and notes...</p>}
  {error&&<p role="alert" style={{color:'#ffbbb6'}}>{error}</p>}
@@ -117,6 +120,16 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  {liveMode&&<button type="button" onClick={()=>void end()}>End staging presentation</button>}
  {publishMessage&&<p role="status">{publishMessage}</p>}
  </section>
+ {speakerMode&&<div role="dialog" aria-modal="true" aria-label="Full-screen speaker view" style={{position:'fixed',inset:0,zIndex:10000,background:'#07172e',color:'#fff',padding:20,boxSizing:'border-box',display:'flex',flexDirection:'column',gap:14}}>
+ <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}><strong style={{fontSize:20}}>Masjid Ibrahim · Speaker View</strong><span>Slide {index+1} of {total} {liveMode?'· LIVE (STAGING)':'· PREVIEW'}</span><button type="button" onClick={()=>setSpeakerMode(false)}>Exit speaker view</button></header>
+ <div style={{display:'grid',gridTemplateColumns:'minmax(0,3fr) minmax(240px,1fr)',gap:16,flex:'1 1 0',minHeight:0}}>
+ <div style={{background:'#061b35',border:'1px solid #b99456',borderRadius:8,overflow:'hidden',minHeight:0}}>{pdf&&<SlideCanvas file={pdf} page={index+1} onPageCount={onPageCount}/>}</div>
+ <div style={{display:'flex',flexDirection:'column',gap:14,minHeight:0}}>
+ <div style={{flex:'0 0 36%',minHeight:0}}><strong>Next slide</strong><div style={{height:'calc(100% - 28px)',marginTop:8,background:'#061b35',borderRadius:8,overflow:'hidden'}}>{pdf&&index+1<total?<SlideCanvas file={pdf} page={index+2} onPageCount={onPageCount}/>:<div style={{padding:20}}>End of presentation</div>}</div></div>
+ <div style={{flex:'1 1 0',minHeight:0,background:'#102c4f',padding:18,borderRadius:8,overflowY:'auto'}}><strong style={{color:'#e6c382'}}>Private speaker notes</strong><p style={{fontSize:'clamp(17px,1.45vw,25px)',whiteSpace:'pre-wrap',lineHeight:1.5}}>{info.slides[index]?.notes||'No notes on this slide.'}</p></div>
+ </div></div>
+ <footer style={{display:'flex',alignItems:'center',justifyContent:'center',gap:18}}><button type="button" disabled={index===0} onClick={()=>{const n=Math.max(0,index-1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>← Previous</button><strong>{index+1} / {total}</strong><button type="button" disabled={index>=total-1} onClick={()=>{const n=Math.min(total-1,index+1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>Next →</button></footer>
+ </div>}
  {info.warnings.length>0&&<p style={{color:'#ffcbc4'}}>{info.warnings.join('; ')}</p>}
  <p style={{color:'#bbcada',fontSize:13}}>Private laptop preview only. Slides now render page-by-page at high resolution with the original proportions. TV/PRISM broadcasting is still disabled.</p>
  </>}
