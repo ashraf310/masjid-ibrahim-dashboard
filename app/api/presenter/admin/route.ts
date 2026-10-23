@@ -50,6 +50,21 @@ export async function POST(req:NextRequest){
   try{await deletePresentationAssets(db,id)}catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Cleanup failed'},{status:503,headers})}
   return NextResponse.json({ok:true},{headers});
  }
+ if(input.action==='purge_revoked'){
+  const {data:revoked,error:listError}=await db.from('presenter_links').select('id').not('revoked_at','is',null);
+  if(listError)return NextResponse.json({error:'Could not list revoked presenter links'},{status:503,headers});
+  let removed=0;
+  for(const presenter of revoked||[]){
+   const {data:items,error:itemsError}=await db.from('presentations').select('id').eq('presenter_id',presenter.id);
+   if(itemsError)return NextResponse.json({error:'Cleanup stopped while checking associated presentations',removed},{status:503,headers});
+   try{for(const item of items||[])await deletePresentationAssets(db,item.id)}
+   catch(e){return NextResponse.json({error:'Cleanup stopped: '+(e instanceof Error?e.message:'Could not delete presentation assets'),removed},{status:503,headers})}
+   const {error:deleteError}=await db.from('presenter_links').delete().eq('id',presenter.id).not('revoked_at','is',null);
+   if(deleteError)return NextResponse.json({error:'Cleanup stopped while removing revoked link',removed},{status:503,headers});
+   removed++;
+  }
+  return NextResponse.json({ok:true,removed},{headers});
+ }
  if(input.action==='revoke'){
   const id=typeof input.id==='string'?input.id:'';
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))return NextResponse.json({error:'Invalid presenter ID'},{status:400,headers});
