@@ -8,7 +8,8 @@ export async function GET(req:NextRequest){
  const id=req.nextUrl.searchParams.get('id')||'',key=req.nextUrl.searchParams.get('key')||'';
  if(!validAudienceKey(id,key))return NextResponse.json({error:'Not authorized'},{status:401,headers});
  const {data:p,error:e}=await db.from('presentations').select('id,title,state,total_slides,current_slide').eq('id',id).maybeSingle();
- if(e||!p)return NextResponse.json({error:'Presentation not found'},{status:404,headers});
+ if(e)return NextResponse.json({error:'Audience status unavailable'},{status:503,headers});
+ if(!p)return NextResponse.json({state:'ended',slideUrl:null},{headers});
  if(p.state!=='live')return NextResponse.json({state:p.state==='ended'?'ended':'waiting',slideUrl:null},{headers});
  const {data:slide,error:slideError}=await db.from('presentation_slides').select('image_path').eq('presentation_id',id).eq('slide_number',p.current_slide).maybeSingle();
  if(slideError||!slide)return NextResponse.json({error:'Slide unavailable'},{status:503,headers});
