@@ -1,6 +1,5 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {bearerToken,stagingDb,tokenDigest} from '../../../../lib/staging-presenter-server';
-import {audienceKey} from '../../../../lib/staging-audience-auth';
 import {deletePresentationAssets} from '../../../../lib/delete-staging-presentation';
 export const runtime='nodejs';export const dynamic='force-dynamic';
 const headers={'Cache-Control':'no-store'};
@@ -43,6 +42,5 @@ export async function POST(req:NextRequest){
   try{await deletePresentationAssets(db,id)}catch(e){return NextResponse.json({error:'Presentation ended, but cleanup did not finish. Admin can clear remaining assets. '+(e instanceof Error?e.message:'')},{status:503,headers})}
   return NextResponse.json({ok:true,cleared:true},{headers});
  }else return NextResponse.json({error:'Invalid action'},{status:400,headers});
- const key=audienceKey(id);
- return NextResponse.json({ok:true,audiencePath:'/audience-staging?id='+encodeURIComponent(id)+'&key='+encodeURIComponent(key)},{headers});
+ return NextResponse.json({ok:true,audiencePath:'/audience-live'},{headers});
 }
