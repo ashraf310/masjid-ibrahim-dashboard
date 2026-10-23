@@ -37,7 +37,12 @@ public final class MainActivity extends Activity {
      conn.setReadTimeout(4500);
      conn.setRequestProperty("Cache-Control","no-cache");
      if(conn.getResponseCode()==200){
-      byte[] bytes=conn.getInputStream().readAllBytes();
+      java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream();
+      try(java.io.InputStream input=conn.getInputStream()){
+       byte[] buffer=new byte[4096];int count;
+       while((count=input.read(buffer))!=-1)output.write(buffer,0,count);
+      }
+      byte[] bytes=output.toByteArray();
       JSONObject json=new JSONObject(new String(bytes,java.nio.charset.StandardCharsets.UTF_8));
       live="live".equals(json.optString("state"));
      }
