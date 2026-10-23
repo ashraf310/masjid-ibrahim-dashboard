@@ -18,7 +18,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  const [audiencePath,setAudiencePath]=useState('');
  const [liveMode,setLiveMode]=useState(false);
  const [speakerMode,setSpeakerMode]=useState(false);
- async function liveAction(action:'start'|'advance'|'end'|'ready',slide?:number,total?:number,idOverride?:string){
+ async function liveAction(action:'start'|'advance'|'end'|'ready'|'link',slide?:number,total?:number,idOverride?:string){
   const targetId=idOverride||resolvedId;
   if(!targetId||!presenterToken)throw Error('Presentation upload required');
   const response=await fetch('/api/presenter/live',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+presenterToken},body:JSON.stringify({presentationId:targetId,action,slide,total})});
@@ -26,6 +26,10 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
   if(!response.ok)throw Error(result.error||'Cannot update presentation');
   if(result.audiencePath)setAudiencePath(result.audiencePath);
   return result;
+ }
+ async function getAudienceLink(){
+  try{await liveAction('link');setPublishMessage('Existing audience preview link restored.')}
+  catch(e){setPublishMessage(e instanceof Error?e.message:'Unable to retrieve audience link')}
  }
  async function publish(){
   if(!pdf||!presenterToken||!info||pageCount!==info.slides.length)return;
@@ -115,6 +119,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  {!presentationId&&<p role="status" style={{color:'#ffd58d'}}>When you click Prepare slides, this PPTX will be uploaded automatically if it is not already stored. Your presenter link remains unchanged.</p>}
  {presentationId&&pdf&&pageCount!==total&&<p role="status" style={{color:'#ffd58d'}}>Converted slide count does not match PowerPoint; please reconvert before publishing.</p>}
  <button type="button" disabled={publishing||!pdf||pageCount!==total||liveMode} onClick={()=>void publish()}>{publishing?'Publishing...':'Prepare slides for audience preview'}</button>
+ {presentationId&&<button type="button" onClick={()=>void getAudienceLink()}>Retrieve existing audience link</button>}
  {audiencePath&&<p><a style={{color:'#e2bd77',textDecoration:'underline'}} href={audiencePath} target="_blank" rel="noopener noreferrer">Open private staging audience preview</a> — share only with test viewers.</p>}
  {audiencePath&&!liveMode&&<button type="button" disabled={publishing} onClick={()=>void start()}>Start staging presentation</button>}
  {liveMode&&<button type="button" onClick={()=>void end()}>End staging presentation</button>}
