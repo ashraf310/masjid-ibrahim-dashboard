@@ -14,5 +14,5 @@ export async function GET(){
  if(slideError||!slide)return NextResponse.json({error:'Slide unavailable'},{status:503,headers});
  const {data:signed,error:signError}=await db.storage.from('presentation-slides').createSignedUrl(slide.image_path,60);
  if(signError||!signed)return NextResponse.json({error:'Slide unavailable'},{status:503,headers});
- return NextResponse.json({state:'live',title:active.title,slide:active.current_slide,total:active.total_slides,slideUrl:signed.signedUrl},{headers});
+ return NextResponse.json({state:'live',presentationId:active.id,title:active.title,slide:active.current_slide,total:active.total_slides,slideUrl:signed.signedUrl},{headers});
 }
