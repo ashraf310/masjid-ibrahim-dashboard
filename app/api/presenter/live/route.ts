@@ -14,7 +14,9 @@ export async function POST(req:NextRequest){
  if(typeof id!=='string'||!/^[0-9a-f-]{36}$/i.test(id))return NextResponse.json({error:'Invalid presentation'},{status:400,headers});
  const {data:p,error:e}=await db.from('presentations').select('id,state,total_slides,current_slide').eq('id',id).eq('presenter_id',owner.id).maybeSingle();
  if(e||!p)return NextResponse.json({error:'Presentation not found'},{status:404,headers});
- if(b.action==='ready'){
+ if(b.action==='link'){
+  if(!['ready','live'].includes(p.state))return NextResponse.json({error:'Presentation is '+p.state+'. Clear an ended presentation or prepare new slides first.'},{status:409,headers});
+ }else if(b.action==='ready'){
   const total=b.total;
   if((p.state!=='processing'&&p.state!=='ready')||typeof total!=='number'||!Number.isInteger(total)||total<1||total>300)return NextResponse.json({error:'Invalid preparation'},{status:409,headers});
   const {data:slides,error:listError}=await db.from('presentation_slides').select('slide_number').eq('presentation_id',id);
