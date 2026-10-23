@@ -5,28 +5,31 @@ import type {PptxInfo} from '../lib/inspect-pptx';
 
 /** Presenter-only preparation: speaker's original PPTX notes + its exported PDF slides.
  * No PDF or notes are broadcast, uploaded or shared from this component. */
-export default function LocalPptxPresenter({file,presenterToken,presentationId}:{file:File;presenterToken:string;presentationId:string|null}){
+export default function LocalPptxPresenter({file,presenterToken,presentationId,ensureUploaded}:{file:File;presenterToken:string;presentationId:string|null;ensureUploaded:()=>Promise<string>}){
  const [info,setInfo]=useState<PptxInfo|null>(null);
  const [error,setError]=useState('');
  const [index,setIndex]=useState(0);
  const [pdf,setPdf]=useState<File|null>(null);
  const [pageCount,setPageCount]=useState<number|null>(null);
  const [publishing,setPublishing]=useState(false);
+ const [activeId,setActiveId]=useState<string|null>(null);
+ const resolvedId=activeId||presentationId;
  const [publishMessage,setPublishMessage]=useState('');
  const [audiencePath,setAudiencePath]=useState('');
  const [liveMode,setLiveMode]=useState(false);
  async function liveAction(action:'start'|'advance'|'end'|'ready',slide?:number,total?:number){
-  if(!presentationId||!presenterToken)throw Error('Upload your PPTX first to enable a staging audience preview');
-  const response=await fetch('/api/presenter/live',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+presenterToken},body:JSON.stringify({presentationId,action,slide,total})});
+  if(!resolvedId||!presenterToken)throw Error('Presentation upload required');
+  const response=await fetch('/api/presenter/live',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+presenterToken},body:JSON.stringify({presentationId:resolvedId,action,slide,total})});
   const result=await response.json();
   if(!response.ok)throw Error(result.error||'Cannot update presentation');
   if(result.audiencePath)setAudiencePath(result.audiencePath);
   return result;
  }
  async function publish(){
-  if(!pdf||!presentationId||!presenterToken||!info||pageCount!==info.slides.length)return;
+  if(!pdf||!presenterToken||!info||pageCount!==info.slides.length)return;
   setPublishing(true);setPublishMessage('Preparing slides locally...');
   try{
+   const id=await ensureUploaded();setActiveId(id);
    const pdfjs=await import('pdfjs-dist');
    pdfjs.GlobalWorkerOptions.workerSrc=new URL('pdfjs-dist/build/pdf.worker.min.mjs',import.meta.url).toString();
    const document=await pdfjs.getDocument({data:new Uint8Array(await pdf.arrayBuffer())}).promise;
@@ -42,7 +45,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId}:
      await page.render({canvasContext:context,viewport}).promise;
      const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('Image encoding failed')),'image/jpeg',0.85));
      if(blob.size>2*1024*1024)throw Error('Slide '+(i+1)+' is above the 2 MB staging limit');
-     const response=await fetch('/api/presenter/slide',{method:'POST',headers:{Authorization:'Bearer '+presenterToken,'Content-Type':'image/jpeg','X-Presentation-Id':presentationId,'X-Slide-Number':String(i)},body:blob});
+     const response=await fetch('/api/presenter/slide',{method:'POST',headers:{Authorization:'Bearer '+presenterToken,'Content-Type':'image/jpeg','X-Presentation-Id':id,'X-Slide-Number':String(i)},body:blob});
      if(!response.ok){const result=await response.json();throw Error(result.error||'Slide upload failed')}
     }
     await liveAction('ready',undefined,document.numPages);
@@ -78,7 +81,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId}:
  const t=e.target as HTMLElement|null;if(t&&(/INPUT|TEXTAREA|SELECT/.test(t.tagName)||t.isContentEditable))return;
  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();setIndex(v=>{const n=Math.min(info.slides.length-1,v+1);if(liveMode)void liveAction('advance',n).catch(err=>setPublishMessage(String(err)));return n})}
  if(e.key==='ArrowLeft'){e.preventDefault();setIndex(v=>{const n=Math.max(0,v-1);if(liveMode)void liveAction('advance',n).catch(err=>setPublishMessage(String(err)));return n})}
- };window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener)},[info,liveMode,presentationId,presenterToken]);
+ };window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener)},[info,liveMode,resolvedId,presenterToken]);
  const total=info?.slides.length||0;
  return <section style={{marginTop:22,padding:22,background:'#12395c',borderRadius:12}}>
  <h2>PowerPoint Presenter View</h2>
@@ -105,9 +108,9 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId}:
  <section style={{marginTop:20,padding:16,border:'1px solid #d2af71',borderRadius:8}}>
  <h3>Staging audience test (not connected to Masjid TVs)</h3>
  <p style={{fontSize:13}}>Your converted slide images, but never your speaker notes, will be uploaded to private staging storage for this test.</p>
- {!presentationId&&<p role="status" style={{color:'#ffd58d'}}>To enable audience preview, first upload this PPTX using the <strong>Upload presentation</strong> button at the top of the Presenter Portal. Local conversion and uploading are separate steps. If another file is already uploaded, select Remove / Replace Presentation first.</p>}
+ {!presentationId&&<p role="status" style={{color:'#ffd58d'}}>When you click Prepare slides, this PPTX will be uploaded automatically if it is not already stored. Your presenter link remains unchanged.</p>}
  {presentationId&&pdf&&pageCount!==total&&<p role="status" style={{color:'#ffd58d'}}>Converted slide count does not match PowerPoint; please reconvert before publishing.</p>}
- <button type="button" disabled={publishing||!pdf||!presentationId||pageCount!==total||liveMode} onClick={()=>void publish()}>{publishing?'Publishing...':'Prepare slides for audience preview'}</button>
+ <button type="button" disabled={publishing||!pdf||pageCount!==total||liveMode} onClick={()=>void publish()}>{publishing?'Publishing...':'Prepare slides for audience preview'}</button>
  {audiencePath&&<p><a style={{color:'#e2bd77',textDecoration:'underline'}} href={audiencePath} target="_blank" rel="noopener noreferrer">Open private staging audience preview</a> — share only with test viewers.</p>}
  {audiencePath&&!liveMode&&<button type="button" disabled={publishing} onClick={()=>void start()}>Start staging presentation</button>}
  {liveMode&&<button type="button" onClick={()=>void end()}>End staging presentation</button>}
