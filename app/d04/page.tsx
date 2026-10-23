@@ -15,7 +15,7 @@ export default function SalahTimings(){
  useEffect(()=>{let active=true;async function refresh(){try{const r=await fetch('/api/public',{cache:'no-store'});if(!r.ok)throw Error('Data service unavailable');const data=await r.json();if(active){setCfg(data.config);setTomorrow(data.tomorrowPrayer||null);setStatus(data.prayerStatus==='masjidal'?'MasjidAl':'Prayer timetable unavailable');}}catch{if(active)setStatus('Connection unavailable')}}refresh();const t=setInterval(refresh,60000);return()=>{active=false;clearInterval(t)}},[]);
  const today=now?day(now):'',prayer=cfg?.prayer?.date===today?cfg.prayer:null;
  const friday=now?new Intl.DateTimeFormat('en-US',{weekday:'long',timeZone:zone}).format(now)==='Friday':false;
- const events=prayer?PRAYERS.filter(n=>!(friday&&n==='Dhuhr')).map(n=>({name:n,time:toSec(prayer.prayers[n].iqamah)})).concat(friday?[{name:'Jumu’ah 1',time:toSec(prayer.jumuah1)},{name:'Jumu’ah 2',time:toSec(prayer.jumuah2)}]:[]):[];
+ const events:{name:string;time:number|null}[]=prayer?PRAYERS.filter(n=>!(friday&&n==='Dhuhr')).map(n=>({name:n,time:toSec(prayer.prayers[n].iqamah)})).concat(friday?[{name:'Jumu’ah 1',time:toSec(prayer.jumuah1)},{name:'Jumu’ah 2',time:toSec(prayer.jumuah2)}]:[]):[];
  const next=events.filter((x):x is {name:string;time:number}=>x.time!==null&&!!now&&x.time>seconds(now)).sort((a,b)=>a.time-b.time)[0];
  const remain=next&&now?Math.max(0,next.time-seconds(now)):null;
  const countdown=remain===null?'--:--:--':[Math.floor(remain/3600),Math.floor(remain%3600/60),remain%60].map(v=>String(v).padStart(2,'0')).join(':');
