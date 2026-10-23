@@ -17,9 +17,10 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  const [publishMessage,setPublishMessage]=useState('');
  const [audiencePath,setAudiencePath]=useState('');
  const [liveMode,setLiveMode]=useState(false);
- async function liveAction(action:'start'|'advance'|'end'|'ready',slide?:number,total?:number){
-  if(!resolvedId||!presenterToken)throw Error('Presentation upload required');
-  const response=await fetch('/api/presenter/live',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+presenterToken},body:JSON.stringify({presentationId:resolvedId,action,slide,total})});
+ async function liveAction(action:'start'|'advance'|'end'|'ready',slide?:number,total?:number,idOverride?:string){
+  const targetId=idOverride||resolvedId;
+  if(!targetId||!presenterToken)throw Error('Presentation upload required');
+  const response=await fetch('/api/presenter/live',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+presenterToken},body:JSON.stringify({presentationId:targetId,action,slide,total})});
   const result=await response.json();
   if(!response.ok)throw Error(result.error||'Cannot update presentation');
   if(result.audiencePath)setAudiencePath(result.audiencePath);
@@ -48,7 +49,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
      const response=await fetch('/api/presenter/slide',{method:'POST',headers:{Authorization:'Bearer '+presenterToken,'Content-Type':'image/jpeg','X-Presentation-Id':id,'X-Slide-Number':String(i)},body:blob});
      if(!response.ok){const result=await response.json();throw Error(result.error||'Slide upload failed')}
     }
-    await liveAction('ready',undefined,document.numPages);
+    await liveAction('ready',undefined,document.numPages,id);
     setPublishMessage('Slides ready. Open the audience preview link in another browser/device, then click Start staging presentation.');
    }finally{await document.destroy()}
   }catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot publish slides')}
