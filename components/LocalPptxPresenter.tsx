@@ -5,13 +5,40 @@ import type {PptxInfo} from '../lib/inspect-pptx';
 
 /** Presenter-only preparation: speaker's original PPTX notes + its exported PDF slides.
  * No PDF or notes are broadcast, uploaded or shared from this component. */
-function PresenterQuestions({token,presentationId}:{token:string;presentationId:string}){
+function PresenterQuestions({token,presentationId,onClose}:{token:string;presentationId:string;onClose:()=>void}){
  const [questions,setQuestions]=useState<{id:string;question:string;status:string;created_at:string}[]>([]);
+ const [position,setPosition]=useState(0);
  const [notice,setNotice]=useState('');
- const load=useCallback(async()=>{try{const r=await fetch('/api/questions?presentationId='+encodeURIComponent(presentationId),{headers:{Authorization:'Bearer '+token},cache:'no-store'});if(!r.ok)throw Error('Questions unavailable: apply staging SQL migration');setQuestions((await r.json()).questions||[]);setNotice('')}catch(e){setNotice(e instanceof Error?e.message:'Could not refresh')}},[token,presentationId]);
- useEffect(()=>{void load();const timer=setInterval(()=>void load(),5000);return()=>clearInterval(timer)},[load]);
- async function moderate(id:string,status:'answered'|'hidden'|'new'){try{const r=await fetch('/api/questions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({presentationId,questionId:id,status})});if(!r.ok)throw Error('Moderation failed');void load()}catch(e){setNotice(String(e))}}
- return <section style={{background:'#0a294a',border:'1px solid #bfa46b',padding:16,borderRadius:9,marginTop:18}}><h3>Live Q&A · Presenter only</h3><p>Audience link: <a href="/questions" target="_blank" rel="noreferrer" style={{color:'#edd299'}}> /questions</a> · Questions never appear automatically on TVs.</p><button type="button" onClick={()=>void load()}>Refresh questions</button>{notice&&<p role="status">{notice}</p>}{questions.filter(q=>q.status!=='hidden').map(q=><div key={q.id} style={{borderTop:'1px solid #526e88',padding:'12px 0'}}><p style={{whiteSpace:'pre-wrap'}}>{q.question}</p><small>{q.status.toUpperCase()}</small> <button type="button" onClick={()=>void moderate(q.id,'answered')}>Mark answered</button><button type="button" onClick={()=>void moderate(q.id,'hidden')}>Hide</button></div>)}{!questions.length&&<p>No questions yet.</p>}</section>
+ const load=useCallback(async()=>{
+  try{
+   const r=await fetch('/api/questions?presentationId='+encodeURIComponent(presentationId),{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+   if(!r.ok)throw Error('Questions are unavailable. Check staging Q&A setup.');
+   const data=await r.json() as {questions?:{id:string;question:string;status:string;created_at:string}[]};
+   setQuestions((data.questions||[]).filter(q=>q.status!=='hidden').sort((a,b)=>a.created_at.localeCompare(b.created_at)));
+   setNotice('');
+  }catch(e){setNotice(e instanceof Error?e.message:'Unable to load questions')}
+ },[token,presentationId]);
+ useEffect(()=>{void load();const timer=window.setInterval(()=>void load(),5000);return()=>window.clearInterval(timer)},[load]);
+ useEffect(()=>{setPosition(p=>Math.min(p,Math.max(0,questions.length-1)))},[questions.length]);
+ useEffect(()=>{
+  const handle=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.stopImmediatePropagation();onClose()}else if(e.key==='ArrowRight'){e.preventDefault();e.stopImmediatePropagation();setPosition(p=>Math.min(questions.length-1,p+1))}else if(e.key==='ArrowLeft'){e.preventDefault();e.stopImmediatePropagation();setPosition(p=>Math.max(0,p-1))}};
+  window.addEventListener('keydown',handle,true);return()=>window.removeEventListener('keydown',handle,true);
+ },[questions.length,onClose]);
+ return <div role="dialog" aria-modal="true" aria-label="Speaker Q&A" style={{position:'fixed',inset:0,zIndex:11000,background:'#07172e',color:'#fff',padding:'clamp(18px,3vw,42px)',boxSizing:'border-box',display:'flex',flexDirection:'column',gap:24}}>
+  <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
+   <h2 style={{margin:0,fontSize:'clamp(24px,3vw,38px)',color:'#e4c07a'}}>Live Q&A</h2>
+   <button type="button" onClick={onClose}>Back to speaker view</button>
+  </header>
+  <main style={{flex:'1 1 0',minHeight:0,display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',background:'#102c4f',borderRadius:16,padding:'clamp(18px,4vw,50px)',overflowY:'auto'}}>
+   {questions.length>0?<><p style={{color:'#e4c07a',fontSize:21}}>Question {position+1} of {questions.length}</p><p style={{fontSize:'clamp(25px,3vw,46px)',whiteSpace:'pre-wrap',lineHeight:1.4,textAlign:'center',overflowWrap:'anywhere'}}>{questions[position]?.question}</p></>:<p style={{fontSize:26}}>No questions submitted yet.</p>}
+   {notice&&<p role="status">{notice}</p>}
+  </main>
+  <footer style={{display:'flex',alignItems:'center',justifyContent:'center',gap:22,flexWrap:'wrap'}}>
+   <button type="button" disabled={position===0||!questions.length} onClick={()=>setPosition(p=>Math.max(0,p-1))}>← Previous question</button>
+   <span style={{fontSize:20}}>{questions.length?position+1:0} / {questions.length}</span>
+   <button type="button" disabled={!questions.length||position>=questions.length-1} onClick={()=>setPosition(p=>Math.min(questions.length-1,p+1))}>Next question →</button>
+  </footer>
+ </div>;
 }
 export default function LocalPptxPresenter({file,presenterToken,presentationId,ensureUploaded,onEnded}:{file:File;presenterToken:string;presentationId:string|null;ensureUploaded:()=>Promise<string>;onEnded:()=>void}){
  const [info,setInfo]=useState<PptxInfo|null>(null);
@@ -26,6 +53,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  const [audiencePath,setAudiencePath]=useState('');
  const [liveMode,setLiveMode]=useState(false);
  const [speakerMode,setSpeakerMode]=useState(false);
+ const [qaOpen,setQaOpen]=useState(false);
  async function liveAction(action:'start'|'advance'|'end'|'ready'|'link',slide?:number,total?:number,idOverride?:string){
   const targetId=idOverride||resolvedId;
   if(!targetId||!presenterToken)throw Error('Presentation upload required');
@@ -92,11 +120,11 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  },[file]);
  useEffect(()=>{setPageCount(null)},[pdf]);
  useEffect(()=>{const listener=(e:KeyboardEvent)=>{
- if(!info?.slides.length)return;
+ if(!info?.slides.length||qaOpen)return;
  const t=e.target as HTMLElement|null;if(t&&(/INPUT|TEXTAREA|SELECT/.test(t.tagName)||t.isContentEditable))return;
  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();setIndex(v=>{const n=Math.min(info.slides.length-1,v+1);if(liveMode)void liveAction('advance',n).catch(err=>setPublishMessage(String(err)));return n})}
  if(e.key==='ArrowLeft'){e.preventDefault();setIndex(v=>{const n=Math.max(0,v-1);if(liveMode)void liveAction('advance',n).catch(err=>setPublishMessage(String(err)));return n})}
- };window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener)},[info,liveMode,resolvedId,presenterToken]);
+ };window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener)},[info,liveMode,resolvedId,presenterToken,qaOpen]);
  const total=info?.slides.length||0;
  return <section style={{marginTop:22,padding:22,background:'#12395c',borderRadius:12}}>
  <h2>PowerPoint Presenter View</h2>
@@ -119,8 +147,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  </div></div>
  </div>
  <div style={{marginTop:16,padding:16,background:'#091f3b',borderRadius:8}}><strong>Private speaker notes</strong><p style={{whiteSpace:'pre-wrap',lineHeight:1.6}}>{info.slides[index]?.notes||'No speaker notes on this slide.'}</p></div>
- {liveMode&&resolvedId&&<PresenterQuestions token={presenterToken} presentationId={resolvedId}/>}
- <div style={{display:'flex',gap:14,alignItems:'center',marginTop:15}}>
+  <div style={{display:'flex',gap:14,alignItems:'center',marginTop:15}}>
  <button type="button" disabled={index===0} onClick={()=>{const n=Math.max(0,index-1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>Previous</button><strong>{index+1} / {total}</strong><button type="button" disabled={index>=total-1} onClick={()=>{const n=Math.min(total-1,index+1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>Next</button></div>
  <section style={{marginTop:20,padding:16,border:'1px solid #d2af71',borderRadius:8}}>
  <h3>Staging audience test (not connected to Masjid TVs)</h3>
@@ -135,16 +162,16 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  {publishMessage&&<p role="status">{publishMessage}</p>}
  </section>
  {speakerMode&&<div role="dialog" aria-modal="true" aria-label="Full-screen speaker view" style={{position:'fixed',inset:0,zIndex:10000,background:'#07172e',color:'#fff',padding:20,boxSizing:'border-box',display:'flex',flexDirection:'column',gap:14}}>
- <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}><strong style={{fontSize:20}}>Masjid Ibrahim · Speaker View</strong><span>Slide {index+1} of {total} {liveMode?'· LIVE (STAGING)':'· PREVIEW'}</span><button type="button" onClick={()=>setSpeakerMode(false)}>Exit speaker view</button></header>
+ <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}><strong style={{fontSize:20}}>Masjid Ibrahim · Speaker View</strong><span>Slide {index+1} of {total} {liveMode?'· LIVE (STAGING)':'· PREVIEW'}</span><div style={{display:'flex',gap:12}}>{liveMode&&resolvedId&&<button type="button" onClick={()=>setQaOpen(true)}>Open Q&A</button>}<button type="button" onClick={()=>setSpeakerMode(false)}>Exit speaker view</button></div></header>
  <div style={{display:'grid',gridTemplateColumns:'minmax(0,3fr) minmax(240px,1fr)',gap:16,flex:'1 1 0',minHeight:0}}>
  <div style={{background:'#061b35',border:'1px solid #b99456',borderRadius:8,overflow:'hidden',minHeight:0}}>{pdf&&<SlideCanvas file={pdf} page={index+1} onPageCount={onPageCount}/>}</div>
  <div style={{display:'flex',flexDirection:'column',gap:14,minHeight:0}}>
  <div style={{flex:'0 0 36%',minHeight:0}}><strong>Next slide</strong><div style={{height:'calc(100% - 28px)',marginTop:8,background:'#061b35',borderRadius:8,overflow:'hidden'}}>{pdf&&index+1<total?<SlideCanvas file={pdf} page={index+2} onPageCount={onPageCount}/>:<div style={{padding:20}}>End of presentation</div>}</div></div>
  <div style={{flex:'1 1 0',minHeight:0,background:'#102c4f',padding:18,borderRadius:8,overflowY:'auto'}}><strong style={{color:'#e6c382'}}>Private speaker notes</strong><p style={{fontSize:'clamp(17px,1.45vw,25px)',whiteSpace:'pre-wrap',lineHeight:1.5}}>{info.slides[index]?.notes||'No notes on this slide.'}</p></div>
- {liveMode&&resolvedId&&<div style={{maxHeight:'32%',overflowY:'auto'}}><PresenterQuestions token={presenterToken} presentationId={resolvedId}/></div>}
- </div></div>
+  </div></div>
  <footer style={{display:'flex',alignItems:'center',justifyContent:'center',gap:18}}><button type="button" disabled={index===0} onClick={()=>{const n=Math.max(0,index-1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>← Previous</button><strong>{index+1} / {total}</strong><button type="button" disabled={index>=total-1} onClick={()=>{const n=Math.min(total-1,index+1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>Next →</button></footer>
  </div>}
+ {speakerMode&&qaOpen&&liveMode&&resolvedId&&<PresenterQuestions token={presenterToken} presentationId={resolvedId} onClose={()=>setQaOpen(false)}/>}
  {info.warnings.length>0&&<p style={{color:'#ffcbc4'}}>{info.warnings.join('; ')}</p>}
  <p style={{color:'#bbcada',fontSize:13}}>Private laptop preview only. Slides now render page-by-page at high resolution with the original proportions. TV/PRISM broadcasting is still disabled.</p>
  </>}
