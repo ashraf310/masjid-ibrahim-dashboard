@@ -5,6 +5,14 @@ import type {PptxInfo} from '../lib/inspect-pptx';
 
 /** Presenter-only preparation: speaker's original PPTX notes + its exported PDF slides.
  * No PDF or notes are broadcast, uploaded or shared from this component. */
+function PresenterQuestions({token,presentationId}:{token:string;presentationId:string}){
+ const [questions,setQuestions]=useState<{id:string;question:string;status:string;created_at:string}[]>([]);
+ const [notice,setNotice]=useState('');
+ const load=useCallback(async()=>{try{const r=await fetch('/api/questions?presentationId='+encodeURIComponent(presentationId),{headers:{Authorization:'Bearer '+token},cache:'no-store'});if(!r.ok)throw Error('Questions unavailable: apply staging SQL migration');setQuestions((await r.json()).questions||[]);setNotice('')}catch(e){setNotice(e instanceof Error?e.message:'Could not refresh')}},[token,presentationId]);
+ useEffect(()=>{void load();const timer=setInterval(()=>void load(),5000);return()=>clearInterval(timer)},[load]);
+ async function moderate(id:string,status:'answered'|'hidden'|'new'){try{const r=await fetch('/api/questions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({presentationId,questionId:id,status})});if(!r.ok)throw Error('Moderation failed');void load()}catch(e){setNotice(String(e))}}
+ return <section style={{background:'#0a294a',border:'1px solid #bfa46b',padding:16,borderRadius:9,marginTop:18}}><h3>Live Q&A · Presenter only</h3><p>Audience link: <a href="/questions" target="_blank" rel="noreferrer" style={{color:'#edd299'}}> /questions</a> · Questions never appear automatically on TVs.</p><button type="button" onClick={()=>void load()}>Refresh questions</button>{notice&&<p role="status">{notice}</p>}{questions.filter(q=>q.status!=='hidden').map(q=><div key={q.id} style={{borderTop:'1px solid #526e88',padding:'12px 0'}}><p style={{whiteSpace:'pre-wrap'}}>{q.question}</p><small>{q.status.toUpperCase()}</small> <button type="button" onClick={()=>void moderate(q.id,'answered')}>Mark answered</button><button type="button" onClick={()=>void moderate(q.id,'hidden')}>Hide</button></div>)}{!questions.length&&<p>No questions yet.</p>}</section>
+}
 export default function LocalPptxPresenter({file,presenterToken,presentationId,ensureUploaded,onEnded}:{file:File;presenterToken:string;presentationId:string|null;ensureUploaded:()=>Promise<string>;onEnded:()=>void}){
  const [info,setInfo]=useState<PptxInfo|null>(null);
  const [error,setError]=useState('');
@@ -111,6 +119,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  </div></div>
  </div>
  <div style={{marginTop:16,padding:16,background:'#091f3b',borderRadius:8}}><strong>Private speaker notes</strong><p style={{whiteSpace:'pre-wrap',lineHeight:1.6}}>{info.slides[index]?.notes||'No speaker notes on this slide.'}</p></div>
+ {liveMode&&resolvedId&&<PresenterQuestions token={presenterToken} presentationId={resolvedId}/>}
  <div style={{display:'flex',gap:14,alignItems:'center',marginTop:15}}>
  <button type="button" disabled={index===0} onClick={()=>{const n=Math.max(0,index-1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>Previous</button><strong>{index+1} / {total}</strong><button type="button" disabled={index>=total-1} onClick={()=>{const n=Math.min(total-1,index+1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>Next</button></div>
  <section style={{marginTop:20,padding:16,border:'1px solid #d2af71',borderRadius:8}}>
