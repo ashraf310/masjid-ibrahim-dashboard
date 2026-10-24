@@ -1,6 +1,6 @@
 export type PrayerName = 'Fajr'|'Dhuhr'|'Asr'|'Maghrib'|'Isha';
 export type Timing = {start:string; iqamah:string};
-export type PrayerSchedule = {date:string; hijri:string; prayers:Record<PrayerName,Timing>; jumuah1:string; jumuah2:string; source:'manual'|'masjidal'; verifiedAt:string};
+export type PrayerSchedule = {date:string; hijri:string; prayers:Record<PrayerName,Timing>; sunrise?:string; jumuah1:string; jumuah2:string; source:'manual'|'masjidal'; verifiedAt:string};
 export type Flyer = {id:string; title:string; url:string; enabled:boolean; duration:number};
 export type Config = {heading:string; subtitle:string; donationUrl:string; ticker:string; urgentEnabled:boolean; urgentText:string; flyers:Flyer[]; prayer:PrayerSchedule|null; d04Design?:string;d04WhatsAppUrl?:string;updatedAt?:string};
 export const DONATE = 'https://payments.madinaapps.com/masjidibrahimtx';
