@@ -2,7 +2,7 @@
 import {useEffect,useRef,useState} from 'react';
 type Audience={state:string;presentationId?:string;slide?:number;total?:number;slideUrl?:string|null};
 export default function FixedAudienceScreen(){
- const root=useRef<HTMLElement>(null),last=useRef('');
+ const root=useRef<HTMLElement>(null),last=useRef(''),lastRefresh=useRef(0);
  const [screen,setScreen]=useState<Audience>({state:'waiting'});
  const [error,setError]=useState('');
  const [fullscreen,setFullscreen]=useState(false);
@@ -17,7 +17,7 @@ export default function FixedAudienceScreen(){
     const state=await response.json() as Audience;
     if(!active)return;
     const identity=state.state+':'+(state.presentationId||'')+':'+(state.slide??-1);
-    if(identity!==last.current){last.current=identity;setScreen(state);}
+    if(identity!==last.current||Date.now()-lastRefresh.current>45000){last.current=identity;lastRefresh.current=Date.now();setScreen(state);}
     setError('');
    }catch{if(active)setError('Reconnecting to staging audience feed...')}
   };
