@@ -2,6 +2,12 @@ import {NextRequest,NextResponse} from 'next/server';
 import {stagingDb} from '../../../../lib/staging-presenter-server';
 export const runtime='nodejs';export const dynamic='force-dynamic';
 const headers={'Cache-Control':'no-store','X-Robots-Tag':'noindex,nofollow'};
+export async function GET(){
+ const db=stagingDb();
+ if(!db)return NextResponse.json({live:false},{headers});
+ const {data,error}=await db.from('presentations').select('id').eq('state','live').limit(1).maybeSingle();
+ return NextResponse.json({live:!error&&!!data},{headers});
+}
 export async function POST(req:NextRequest){
  const db=stagingDb();if(!db)return NextResponse.json({error:'Q&A unavailable'},{status:503,headers});
  const origin=req.headers.get('origin');if(origin&&origin!==new URL(req.url).origin)return NextResponse.json({error:'Invalid origin'},{status:403,headers});
