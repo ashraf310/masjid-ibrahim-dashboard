@@ -141,6 +141,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  <div style={{display:'flex',flexDirection:'column',gap:14,minHeight:0}}>
  <div style={{flex:'0 0 36%',minHeight:0}}><strong>Next slide</strong><div style={{height:'calc(100% - 28px)',marginTop:8,background:'#061b35',borderRadius:8,overflow:'hidden'}}>{pdf&&index+1<total?<SlideCanvas file={pdf} page={index+2} onPageCount={onPageCount}/>:<div style={{padding:20}}>End of presentation</div>}</div></div>
  <div style={{flex:'1 1 0',minHeight:0,background:'#102c4f',padding:18,borderRadius:8,overflowY:'auto'}}><strong style={{color:'#e6c382'}}>Private speaker notes</strong><p style={{fontSize:'clamp(17px,1.45vw,25px)',whiteSpace:'pre-wrap',lineHeight:1.5}}>{info.slides[index]?.notes||'No notes on this slide.'}</p></div>
+ {liveMode&&resolvedId&&<div style={{maxHeight:'32%',overflowY:'auto'}}><PresenterQuestions token={presenterToken} presentationId={resolvedId}/></div>}
  </div></div>
  <footer style={{display:'flex',alignItems:'center',justifyContent:'center',gap:18}}><button type="button" disabled={index===0} onClick={()=>{const n=Math.max(0,index-1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>← Previous</button><strong>{index+1} / {total}</strong><button type="button" disabled={index>=total-1} onClick={()=>{const n=Math.min(total-1,index+1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>Next →</button></footer>
  </div>}
