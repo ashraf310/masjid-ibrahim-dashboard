@@ -6,8 +6,8 @@ android {
   applicationId = "org.masjidibrahim.tv.staging"
   minSdk = 23
   targetSdk = 28
-  versionCode = 2
-  versionName = "0.2-d04-staging"
+  versionCode = 3
+  versionName = "0.3-pairing-staging"
  }
  buildTypes { getByName("release") { isMinifyEnabled = false } }
  compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
