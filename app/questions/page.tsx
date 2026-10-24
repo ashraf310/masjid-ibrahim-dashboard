@@ -1,0 +1,7 @@
+'use client';
+import {useState} from 'react';
+export default function AudienceQuestions(){
+ const [question,setQuestion]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
+ async function send(e:React.FormEvent){e.preventDefault();if(busy)return;setBusy(true);try{const r=await fetch('/api/questions/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question})});const j=await r.json();if(!r.ok)throw Error(j.error||'Unable to submit');setNotice('Submitted for presenter review.');setQuestion('')}catch(e){setNotice(e instanceof Error?e.message:'Unable to submit')}finally{setBusy(false)}}
+ return <main style={{minHeight:'100dvh',background:'#081d39',color:'#fff',fontFamily:'Arial,sans-serif',padding:32}}><section style={{maxWidth:620,margin:'auto'}}><h1>Masjid Ibrahim · Live Q&A</h1><p>Ask a question during the current presentation. Questions are private until the speaker decides to address them. Do not include personal or sensitive information.</p><form onSubmit={e=>void send(e)}><label htmlFor="q">Your question</label><textarea id="q" maxLength={500} minLength={4} required rows={5} value={question} onChange={e=>setQuestion(e.target.value)} style={{display:'block',width:'100%',margin:'12px 0',padding:14,fontSize:19}}/><button disabled={busy||question.trim().length<4} style={{background:'#dfbb72',padding:14,border:0,borderRadius:6,fontWeight:'bold'}}>{busy?'Submitting…':'Submit question'}</button></form><p role="status">{notice}</p></section></main>
+}
