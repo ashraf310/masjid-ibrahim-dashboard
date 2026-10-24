@@ -6,8 +6,9 @@ import {validatePresentationFile} from '../../lib/presentation-validation';
 type Session={presenter:{label:string};capabilities:{upload:boolean;live:boolean}};
 export default function Presenter(){
  const [token,setToken]=useState('');
+ const [code,setCode]=useState('');
  const [session,setSession]=useState<Session|null>(null);
- const [status,setStatus]=useState('Checking your presenter link...');
+ const [status,setStatus]=useState('Enter the access code provided by the Masjid administrator.');
  const [file,setFile]=useState<File|null>(null);
  const [busy,setBusy]=useState(false);
  const [current,setCurrent]=useState<{id:string;title:string;state:string}|null>(null);
@@ -27,20 +28,21 @@ export default function Presenter(){
    setStatus('Previous presentation removed. Choose the correct file and upload it; your private link still works.');
   }catch(e){setStatus(e instanceof Error?e.message:'Unable to replace')}finally{setBusy(false)}
  }
- useEffect(()=>{
-  // Token in URL fragment is not sent to the web server in the HTTP request.
-  // Do not persist it in localStorage, analytics or query strings.
-  const fragment=new URLSearchParams(window.location.hash.replace(/^#/,''));const secret=fragment.get('token')||'';
-  window.history.replaceState(null,'',window.location.pathname);
-  if(!/^[a-zA-Z0-9_-]{32,128}$/.test(secret)){setStatus('Open your private presenter link to continue. If you refreshed this page, reopen the original link from Admin.');return}
-  setToken(secret);
-  fetch('/api/presenter/session',{headers:{Authorization:'Bearer '+secret},cache:'no-store'}).then(async response=>{
-   if(!response.ok)throw new Error(response.status===503?'Presenter access is not enabled in staging yet.':'Link is invalid or has been revoked.');
-   const result=await response.json() as Session;setSession(result);setStatus('Presenter link verified.');void loadCurrent(secret);
-  }).catch(e=>setStatus(e instanceof Error?e.message:'Unable to verify presenter link'));
- },[]);
+ async function unlock(e:React.FormEvent){
+  e.preventDefault();if(busy)return;setBusy(true);setStatus('Verifying presenter code...');
+  try{
+   const response=await fetch('/api/presenter/code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code.trim()}),cache:'no-store'});
+   const result=await response.json();if(!response.ok)throw Error(result.error||'Invalid code');
+   const secret=result.token as string;
+   const sessionResponse=await fetch('/api/presenter/session',{headers:{Authorization:'Bearer '+secret},cache:'no-store'});
+   if(!sessionResponse.ok)throw Error('Unable to start presenter session');
+   const active=await sessionResponse.json() as Session;
+   setToken(secret);setSession(active);setCode('');setStatus('Presenter access verified.');await loadCurrent(secret);
+  }catch(e){setStatus(e instanceof Error?e.message:'Could not verify code')}finally{setBusy(false)}
+ }
  async function upload():Promise<string>{
-  if(!file||!token||busy)throw Error('Choose a PowerPoint file before uploading.');\n  if(!file.name.toLowerCase().endsWith('.pptx'))throw Error('Live presentation requires a PowerPoint (.pptx) file.');
+  if(!file||!token||busy)throw Error('Choose a PowerPoint file before uploading.');
+  if(!file.name.toLowerCase().endsWith('.pptx'))throw Error('Live presentation requires a PowerPoint (.pptx) file.');
   const validation=validatePresentationFile(file);if(!validation.ok){setStatus(validation.error);throw Error(validation.error);}
   setBusy(true);
   let reservedId:string|null=null;
@@ -80,8 +82,9 @@ export default function Presenter(){
   return await upload();
  }
  return <main style={{background:'#081d39',color:'#f9f5ea',minHeight:'100vh',fontFamily:'Arial,sans-serif',padding:'5vw'}}><div style={{maxWidth:760,margin:'auto'}}><p style={{color:'#e3bf7e'}}>MASJID IBRAHIM · STAGING</p><h1>Presenter Portal</h1><p role="status" style={{background:'#12395c',padding:18,borderRadius:9}}>{status}</p>
- {session&&<section style={{background:'#12395c',padding:24,borderRadius:12}}><h2>Welcome, {session.presenter.label}</h2>{current&&<div style={{padding:15,border:'1px solid #e2bd77',borderRadius:8,marginBottom:18}}><strong>Uploaded presentation: {current.title}</strong><p>Status: {current.state}</p><button type="button" disabled={busy||!['uploading','processing','ready','failed'].includes(current.state)} onClick={replace} style={{padding:'10px 14px',background:'#e2bd77',color:'#09203b',border:0,borderRadius:6,fontWeight:'bold'}}>Remove / Replace Presentation</button><p style={{fontSize:13,color:'#d4dfea'}}>Your private presenter link remains unchanged.</p></div>}{!current&&<label htmlFor="f">Choose a PowerPoint (.pptx) for live presentation (maximum 50 MB)</label>}<br/><input key={refreshKey} id="f" type="file" disabled={!!current||busy} accept=".pptx" style={{marginTop:15,maxWidth:'100%'}} onChange={e=>{const selected=e.target.files?.[0]||null;setFile(selected);if(selected){const v=validatePresentationFile(selected);setStatus(v.ok?'File ready for upload.':v.error)}}}/><br/><button type="button" onClick={()=>{void upload().catch(()=>{})}} disabled={!file||busy||!!current||!session.capabilities.upload} style={{marginTop:20,padding:'12px 20px',border:0,borderRadius:7,background:'#e2bb6e',color:'#081d39',fontWeight:'bold',opacity:(!file||busy||!session.capabilities.upload)?0.5:1}}>{busy?'Uploading...':'Upload presentation'}</button><p style={{color:'#c9d8e8'}}>Your original PowerPoint keeps notes private. Convert slides locally using the helper or select a matching exported PDF; only slide images reach staging viewers.</p></section>}
+ {!session&&<form onSubmit={e=>void unlock(e)} style={{background:'#12395c',padding:24,borderRadius:12}}><label htmlFor="presenter-code">Presenter access code</label><input id="presenter-code" type="password" autoComplete="off" required minLength={16} maxLength={16} value={code} onChange={e=>setCode(e.target.value.trim())} placeholder="Enter 16-character code" style={{display:'block',margin:'16px 0',padding:13,fontSize:19,width:'min(100%,420px)',boxSizing:'border-box'}}/><button disabled={busy||code.length!==16} style={{padding:14,background:'#e2bd77',color:'#091c33',border:0,borderRadius:7}}>{busy?'Verifying…':'Continue to Presenter Portal'}</button><p style={{fontSize:13}}>The presenter URL stays the same. Request an active code privately from Admin.</p></form>}
+ {session&&<section style={{background:'#12395c',padding:24,borderRadius:12}}><h2>Welcome, {session.presenter.label}</h2>{current&&<div style={{padding:15,border:'1px solid #e2bd77',borderRadius:8,marginBottom:18}}><strong>Uploaded presentation: {current.title}</strong><p>Status: {current.state}</p><button type="button" disabled={busy||!['uploading','processing','ready','failed'].includes(current.state)} onClick={replace} style={{padding:'10px 14px',background:'#e2bd77',color:'#09203b',border:0,borderRadius:6,fontWeight:'bold'}}>Remove / Replace Presentation</button><p style={{fontSize:13,color:'#d4dfea'}}>Your presenter URL remains unchanged.</p></div>}{!current&&<label htmlFor="f">Choose a PowerPoint (.pptx) for live presentation (maximum 50 MB)</label>}<br/><input key={refreshKey} id="f" type="file" disabled={!!current||busy} accept=".pptx" style={{marginTop:15,maxWidth:'100%'}} onChange={e=>{const selected=e.target.files?.[0]||null;setFile(selected);if(selected){const v=validatePresentationFile(selected);setStatus(v.ok?'File ready for upload.':v.error)}}}/><br/><button type="button" onClick={()=>{void upload().catch(()=>{})}} disabled={!file||busy||!!current||!session.capabilities.upload} style={{marginTop:20,padding:'12px 20px',border:0,borderRadius:7,background:'#e2bb6e',color:'#081d39',fontWeight:'bold',opacity:(!file||busy||!session.capabilities.upload)?0.5:1}}>{busy?'Uploading...':'Upload presentation'}</button><p style={{color:'#c9d8e8'}}>Your original PowerPoint keeps notes private. Convert slides locally using the helper or select a matching exported PDF; only slide images reach staging viewers.</p></section>}
  {session&&file?.name.toLowerCase().endsWith('.pdf')&&<LocalPdfSlides file={file}/>}
  {session&&file?.name.toLowerCase().endsWith('.pptx')&&<LocalPptxPresenter file={file} presenterToken={token} presentationId={current?.id||null} ensureUploaded={ensureUploaded} onEnded={()=>{setCurrent(null);setFile(null);setRefreshKey(k=>k+1);setStatus('Presentation ended. Its stored slides, source and questions have been deleted. Select another file to begin a new session.')}}/>}
- <p style={{fontSize:13,color:'#bbcada',marginTop:35}}>Do not share your private presenter link. This staging application cannot control the Masjid TVs.</p></div></main>
+ <p style={{fontSize:13,color:'#bbcada',marginTop:35}}>Keep your presenter code private. Closing or refreshing this tab requires entering the code again. This staging application cannot control the Masjid TVs.</p></div></main>
 }
