@@ -1,59 +1,119 @@
 package org.masjidibrahim.tv.staging;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.content.SharedPreferences;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebSettings;
 import org.json.JSONObject;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** Staging-only Android TV prototype; does not replace the production package. */
+/** Staging-only Android TV: manually entered admin-issued pairing token. */
 public final class MainActivity extends Activity {
- private static final String HOST = "https://masjid-ibrahim-staging.vercel.app";
- private static final String DEFAULT = HOST + "/d04";
- private static final String LIVE = HOST + "/audience-live";
- private static final String API = HOST + "/api/audience/current";
- private final Handler handler = new Handler(Looper.getMainLooper());
- private final ExecutorService io = Executors.newSingleThreadExecutor();
+ private static final String HOST="https://masjid-ibrahim-staging.vercel.app";
+ private static final String CONFIG=HOST+"/api/device/config";
+ private static final String AUDIENCE=HOST+"/api/audience/current";
+ private static final String LIVE=HOST+"/audience-live";
+ private final Handler handler=new Handler(Looper.getMainLooper());
+ private final ExecutorService io=Executors.newSingleThreadExecutor();
  private WebView browser;
- private boolean presenting = false;
- private boolean running = false;
- private final Runnable poll = new Runnable() {
-  @Override public void run() {
-   if (!running) return;
-   io.execute(() -> {
-    Boolean live = null;
-    HttpURLConnection conn = null;
-    try {
-     conn = (HttpURLConnection)new URL(API).openConnection();
-     conn.setConnectTimeout(4500);
-     conn.setReadTimeout(4500);
-     conn.setRequestProperty("Cache-Control","no-cache");
-     if(conn.getResponseCode()==200){
-      java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream();
-      try(java.io.InputStream input=conn.getInputStream()){
-       byte[] buffer=new byte[4096];int count;
-       while((count=input.read(buffer))!=-1)output.write(buffer,0,count);
-      }
-      byte[] bytes=output.toByteArray();
-      JSONObject json=new JSONObject(new String(bytes,java.nio.charset.StandardCharsets.UTF_8));
-      live="live".equals(json.optString("state"));
+ private SharedPreferences prefs;
+ private String token="", defaultUrl=HOST+"/d04",tvId="";
+ private boolean paired=false,followLive=false,presenting=false,running=false,requestInFlight=false;
+ private long lastConfig=0;
+ private String shownUrl="";
+ private static final class Reply {
+  final int status; final JSONObject json;
+  Reply(int code,JSONObject json){this.status=code;this.json=json;}
+ }
+ private Reply get(String url,String bearer) throws Exception {
+  HttpURLConnection conn=(HttpURLConnection)new URL(url).openConnection();
+  try {
+   conn.setConnectTimeout(5000);conn.setReadTimeout(5000);
+   conn.setRequestProperty("Cache-Control","no-cache");
+   if(bearer!=null&&!bearer.isEmpty())conn.setRequestProperty("Authorization","Bearer "+bearer);
+   int status=conn.getResponseCode();
+   if(status!=200)return new Reply(status,null);
+   try(InputStream input=conn.getInputStream();ByteArrayOutputStream output=new ByteArrayOutputStream()){
+    byte[] buffer=new byte[4096];int n;
+    while((n=input.read(buffer))!=-1)output.write(buffer,0,n);
+    return new Reply(status,new JSONObject(output.toString("UTF-8")));
+   }
+  }finally{conn.disconnect();}
+ }
+ private void navigate(String url){
+  if(!url.equals(shownUrl)){shownUrl=url;browser.loadUrl(url);}
+ }
+ private void showSetup(String message){
+  paired=false;followLive=false;presenting=false;tvId="";
+  browser.setVisibility(View.GONE);
+  LinearLayout panel=new LinearLayout(this);
+  panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(45,55,45,35);
+  TextView title=new TextView(this);title.setText("Masjid Ibrahim · STAGING TV Pairing");title.setTextSize(23);panel.addView(title);
+  TextView description=new TextView(this);description.setText(message+"\n\nGenerate a token in /tv-management for TV01, TV02, TV03 or TV05, then enter it here.");description.setTextSize(16);panel.addView(description);
+  EditText entry=new EditText(this);entry.setSingleLine(true);entry.setHint("Paste device pairing token");entry.setText(token);panel.addView(entry);
+  AlertDialog dialog=new AlertDialog.Builder(this).setView(panel).setCancelable(false)
+   .setPositiveButton("Pair TV",null).create();
+  dialog.setOnShowListener(v->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(clicked->{
+   String candidate=entry.getText().toString().trim();
+   if(!candidate.matches("[A-Za-z0-9_-]{32,128}")){entry.setError("Enter the complete token generated by Admin");return;}
+   token=candidate;prefs.edit().putString("pairing_token",token).apply();
+   dialog.dismiss();
+   browser.setVisibility(View.VISIBLE);requestInFlight=false;lastConfig=0;handler.post(poll);
+  }));
+  dialog.show();
+ }
+ private final Runnable poll=new Runnable(){
+  @Override public void run(){
+   if(!running||requestInFlight)return;
+   if(token.isEmpty()){showSetup("This staging TV is not paired.");return;}
+   requestInFlight=true;
+   final boolean refreshConfig=!paired||System.currentTimeMillis()-lastConfig>=15000;
+   final String key=token;
+   io.execute(()->{
+    Reply config=null,audience=null;
+    try{
+     if(refreshConfig)config=get(CONFIG,key);
+     if(!refreshConfig||(config.status==200&&config.json!=null)) {
+      if((!refreshConfig&&followLive)||(refreshConfig&&config.json.optBoolean("followD02",false)))audience=get(AUDIENCE,null);
      }
-    } catch(Exception ignored) { /* Keep current screen on transient network failures. */ }
-    finally { if(conn!=null)conn.disconnect(); }
-    final Boolean state=live;
-    handler.post(() -> {
-     if(!running)return;
-     if(state!=null&&state!=presenting){
-      presenting=state;
-      browser.loadUrl(presenting?LIVE:DEFAULT);
+    }catch(Exception ignored){/* Keep existing screen on transient network errors. */}
+    final Reply c=config,live=audience;
+    handler.post(()->{
+     requestInFlight=false;if(!running||!key.equals(token))return;
+     if(c!=null){
+      if(c.status==401||c.status==403){
+       prefs.edit().remove("pairing_token").apply();token="";showSetup("Pairing revoked or invalid.");return;
+      }
+      if(c.status==200&&c.json!=null){
+       String dashboard=c.json.optString("defaultDashboard","UNASSIGNED");
+       String assigned=c.json.optString("tvId","");
+       if(!assigned.matches("TV0[1-356]")||assigned.equals("TV04")||assigned.equals("TV06")){showSetup("Device assignment not permitted.");return;}
+       tvId=assigned;
+       defaultUrl="D01".equals(dashboard)?HOST+"/":"D04".equals(dashboard)?HOST+"/d04":HOST+"/d04";
+       followLive=c.json.optBoolean("followD02",false);
+       paired=true;lastConfig=System.currentTimeMillis();
+      }
+     }
+     if(paired){
+      // Failed checks never switch away from the current screen. Non-participating TVs never enter D02.
+      if(!followLive)presenting=false;
+      else if(live!=null&&live.status==200&&live.json!=null)presenting="live".equals(live.json.optString("state"));
+      navigate(presenting?LIVE:defaultUrl);
      }
      handler.postDelayed(poll,1500);
     });
@@ -61,24 +121,23 @@ public final class MainActivity extends Activity {
   }
  };
  @Override public void onCreate(Bundle saved){
-  super.onCreate(saved);
-  getWindow().getDecorView().setSystemUiVisibility(5894|1024|512);
-  browser=new WebView(this);
-  browser.setBackgroundColor(0xff071a37);
+  super.onCreate(saved);getWindow().getDecorView().setSystemUiVisibility(5894|1024|512);
+  prefs=getSharedPreferences("staging_pairing",MODE_PRIVATE);token=prefs.getString("pairing_token","");
+  browser=new WebView(this);browser.setBackgroundColor(0xff071a37);
   browser.setWebViewClient(new WebViewClient(){
-   @Override public boolean shouldOverrideUrlLoading(WebView view,String url){
-    return !url.startsWith(HOST+"/");
-   }
+   @Override public boolean shouldOverrideUrlLoading(WebView view,String url){return !url.startsWith(HOST+"/");}
   });
-  WebSettings settings=browser.getSettings();
-  settings.setJavaScriptEnabled(true);
-  settings.setDomStorageEnabled(true);
-  settings.setMediaPlaybackRequiresUserGesture(false);
-  setContentView(browser);
-  browser.loadUrl(DEFAULT);
+  WebSettings settings=browser.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);
+  settings.setMediaPlaybackRequiresUserGesture(false);setContentView(browser);
+  if(token.isEmpty())showSetup("No pairing token has been saved.");
  }
  @Override protected void onResume(){super.onResume();running=true;handler.removeCallbacks(poll);handler.post(poll);}
  @Override protected void onPause(){running=false;handler.removeCallbacks(poll);super.onPause();}
  @Override protected void onDestroy(){running=false;handler.removeCallbacks(poll);io.shutdownNow();browser.destroy();super.onDestroy();}
- @Override public void onBackPressed(){browser.loadUrl(presenting?LIVE:DEFAULT);}
+ @Override public void onBackPressed(){
+  new AlertDialog.Builder(this).setTitle(tvId.isEmpty()?"Staging pairing":"TV "+tvId)
+   .setMessage("Change or revoke the pairing token on this TV?")
+   .setPositiveButton("Change pairing",(d,w)->showSetup("Enter a new token generated by Admin."))
+   .setNegativeButton("Keep current",null).show();
+ }
 }
