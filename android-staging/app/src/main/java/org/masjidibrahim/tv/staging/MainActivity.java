@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 /** Staging-only Android TV prototype; does not replace the production package. */
 public final class MainActivity extends Activity {
  private static final String HOST = "https://masjid-ibrahim-staging.vercel.app";
- private static final String DEFAULT = HOST + "/";
+ private static final String DEFAULT = HOST + "/d04";
  private static final String LIVE = HOST + "/audience-live";
  private static final String API = HOST + "/api/audience/current";
  private final Handler handler = new Handler(Looper.getMainLooper());
