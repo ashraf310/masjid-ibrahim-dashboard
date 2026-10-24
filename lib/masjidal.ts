@@ -16,8 +16,14 @@ export function parseMasjidAl(html:string):PrayerSchedule[]{
   const header=headers.get(Number(match[1]));if(!header)continue;
   const table=match[2].match(/<table\b[^>]*>([\s\S]*?)<\/table>/i);if(!table)continue;
   const prayers={} as PrayerSchedule['prayers'];
+  let sunrise='';
   for(const row of table[1].matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)){
    const cells=[...row[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map(m=>clean(m[1]));
+   if(cells.length===2 && /^Sunrise$/i.test(cells[0])){
+    const parsed=hhmm(cells[1]);
+    if(validHHMM(parsed))sunrise=parsed;
+    continue;
+   }
    if(cells.length<3)continue;
    const key=PRAYERS.find(n=>new RegExp(`\\b${n}\\b`,'i').test(cells[0])) as PrayerName|undefined;
    if(!key)continue;
@@ -33,7 +39,7 @@ export function parseMasjidAl(html:string):PrayerSchedule[]{
   if(jumuah.size!==2)continue;
   const values=PRAYERS.map(n=>prayers[n].start).map(t=>Number(t.slice(0,2))*60+Number(t.slice(3)));
   if(values.some((n,i)=>i>0&&n<=values[i-1]))continue;
-  results.push({date:header.date,hijri:header.hijri,prayers,jumuah1:jumuah.get(1)!,jumuah2:jumuah.get(2)!,source:'masjidal',verifiedAt:new Date().toISOString()});
+  results.push({date:header.date,hijri:header.hijri,prayers,sunrise:sunrise||undefined,jumuah1:jumuah.get(1)!,jumuah2:jumuah.get(2)!,source:'masjidal',verifiedAt:new Date().toISOString()});
  }
  return [...new Map(results.map(p=>[p.date,p])).values()].sort((a,b)=>a.date.localeCompare(b.date));
 }
