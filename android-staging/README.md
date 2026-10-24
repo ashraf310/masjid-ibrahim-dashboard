@@ -3,9 +3,9 @@
 This is an **isolated home-TV pilot**, not the production Masjid TV application.
 
 - Android application ID: `org.masjidibrahim.tv.staging` (does not replace your installed production APK).
-- Normal screen: `https://masjid-ibrahim-staging.vercel.app/`
+- Normal screen (v0.2 D04 test): `https://masjid-ibrahim-staging.vercel.app/d04`
 - When a live staging presentation starts: automatically switches to `https://masjid-ibrahim-staging.vercel.app/audience-live`
-- When presentation ends or is cleared: switches back to the staging dashboard.
+- When presentation ends or is cleared: switches back to D04 Salah Timings.
 - Refreshes the active presentation state approximately every 1.5 seconds; holds the current display through temporary network errors.
 - Uses immersive Android fullscreen and Android TV launcher support.
 - Only the staging URLs are allowed inside the app.
@@ -24,6 +24,9 @@ A GitHub Actions build must succeed before the APK can be tested or distributed.
 4. Home TV should switch to audience slides. Navigate slides from laptop and verify changes.
 5. End the presentation: TV should return to staging dashboard.
 6. Check return from TV standby and after launching the staging app again.
+
+## Installing v0.2 over an older debug build
+GitHub-hosted builds may use a different temporary debug signing certificate between runs. If Android reports a signature or package conflict, uninstall ONLY **Masjid Ibrahim TV STAGING** (not the production app), then install the new APK. The production package has a different ID and must remain untouched.
 
 ## Deliberate staging limitations
 - This first pilot APK uses the fixed live-only staging audience feed; **Admin TV pairing and assigned default dashboards are not implemented in this APK yet**.
