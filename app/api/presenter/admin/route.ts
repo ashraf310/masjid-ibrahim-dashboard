@@ -32,7 +32,7 @@ export async function POST(req:NextRequest){
   if(label.length<1||label.length>100)return NextResponse.json({error:'Enter presenter name (1-100 characters)'},{status:400,headers});
   const code=String(randomInt(0,10000)).padStart(4,'0');const hash=createHash('sha256').update(randomBytes(32)).digest('hex');const codeHash=createHash('sha256').update(code).digest('hex');
   const {data,error}=await db.from('presenter_links').insert({label,token_hash:hash,code_hash:codeHash}).select('id,label,created_at,revoked_at').single();
-  if(error)return NextResponse.json({error:'Cannot generate presenter PIN'},{status:503,headers});
+  if(error){const missingColumn=error.code==='42703'||error.code==='PGRST204'||/code_hash|schema cache|column/i.test(error.message||'');return NextResponse.json({error:missingColumn?'Staging Supabase migration missing: add presenter_links.code_hash using supabase/migrations/20261024_presenter_access_codes.sql.':'PIN creation failed in staging database. Check presenter_links schema and database logs.',code:error.code||'DATABASE_INSERT_FAILED'},{status:503,headers});}
   const base=new URL(req.url).origin;
   return NextResponse.json({presenter:data,link:base+'/presenter',code,notice:'Share the permanent presenter URL and this code privately. The 4-digit code is displayed once.'},{status:201,headers});
  }
