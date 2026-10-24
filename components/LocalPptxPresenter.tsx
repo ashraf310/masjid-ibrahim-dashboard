@@ -26,11 +26,11 @@ function PresenterQuestions({token,presentationId,onClose}:{token:string;present
  },[questions.length,onClose]);
  return <div role="dialog" aria-modal="true" aria-label="Speaker Q&A" style={{position:'fixed',inset:0,zIndex:11000,background:'#07172e',color:'#fff',padding:'clamp(18px,3vw,42px)',boxSizing:'border-box',display:'flex',flexDirection:'column',gap:24}}>
   <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
-   <h2 style={{margin:0,fontSize:'clamp(24px,3vw,38px)',color:'#e4c07a'}}>Live Q&A</h2>
-   <button type="button" onClick={onClose}>Back to speaker view</button>
+   <h2 style={{margin:0,fontSize:'clamp(22px,2.5vw,32px)',color:'#e4c07a'}}>Live Q&A</h2>
+   <button type="button" onClick={onClose} style={{background:"#e2bd77",color:"#081d39",fontWeight:700,border:"none",borderRadius:6,padding:"11px 18px"}}>Back to speaker view</button>
   </header>
   <main style={{flex:'1 1 0',minHeight:0,display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',background:'#102c4f',borderRadius:16,padding:'clamp(18px,4vw,50px)',overflowY:'auto'}}>
-   {questions.length>0?<><p style={{color:'#e4c07a',fontSize:21}}>Question {position+1} of {questions.length}</p><p style={{fontSize:'clamp(25px,3vw,46px)',whiteSpace:'pre-wrap',lineHeight:1.4,textAlign:'center',overflowWrap:'anywhere'}}>{questions[position]?.question}</p></>:<p style={{fontSize:26}}>No questions submitted yet.</p>}
+   {questions.length>0?<><p style={{color:'#e4c07a',fontSize:21}}>Question {position+1} of {questions.length}</p><p style={{fontSize:'clamp(22px,2.5vw,38px)',whiteSpace:'pre-wrap',lineHeight:1.4,textAlign:'center',overflowWrap:'anywhere'}}>{questions[position]?.question}</p></>:<p style={{fontSize:26}}>No questions submitted yet.</p>}
    {notice&&<p role="status">{notice}</p>}
   </main>
   <footer style={{display:'flex',alignItems:'center',justifyContent:'center',gap:22,flexWrap:'wrap'}}>
@@ -162,12 +162,12 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  {publishMessage&&<p role="status">{publishMessage}</p>}
  </section>
  {speakerMode&&<div role="dialog" aria-modal="true" aria-label="Full-screen speaker view" style={{position:'fixed',inset:0,zIndex:10000,background:'#07172e',color:'#fff',padding:20,boxSizing:'border-box',display:'flex',flexDirection:'column',gap:14}}>
- <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}><strong style={{fontSize:20}}>Masjid Ibrahim · Speaker View</strong><span>Slide {index+1} of {total} {liveMode?'· LIVE (STAGING)':'· PREVIEW'}</span><div style={{display:'flex',gap:12}}>{liveMode&&resolvedId&&<button type="button" onClick={()=>setQaOpen(true)}>Open Q&A</button>}<button type="button" onClick={()=>setSpeakerMode(false)}>Exit speaker view</button></div></header>
+ <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}><strong style={{fontSize:20}}>Masjid Ibrahim · Speaker View</strong><span>Slide {index+1} of {total} {liveMode?'· LIVE (STAGING)':'· PREVIEW'}</span><div style={{display:'flex',gap:12}}>{liveMode&&resolvedId&&<button type="button" onClick={()=>setQaOpen(true)}>Open Q&A</button>}<button type="button" onClick={()=>setSpeakerMode(false)} style={{background:"#c62828",color:"#ffffff",fontWeight:700,border:"none",borderRadius:6,padding:"11px 18px"}}>Exit speaker view</button></div></header>
  <div style={{display:'grid',gridTemplateColumns:'minmax(0,3fr) minmax(240px,1fr)',gap:16,flex:'1 1 0',minHeight:0}}>
  <div style={{background:'#061b35',border:'1px solid #b99456',borderRadius:8,overflow:'hidden',minHeight:0}}>{pdf&&<SlideCanvas file={pdf} page={index+1} onPageCount={onPageCount}/>}</div>
  <div style={{display:'flex',flexDirection:'column',gap:14,minHeight:0}}>
  <div style={{flex:'0 0 36%',minHeight:0}}><strong>Next slide</strong><div style={{height:'calc(100% - 28px)',marginTop:8,background:'#061b35',borderRadius:8,overflow:'hidden'}}>{pdf&&index+1<total?<SlideCanvas file={pdf} page={index+2} onPageCount={onPageCount}/>:<div style={{padding:20}}>End of presentation</div>}</div></div>
- <div style={{flex:'1 1 0',minHeight:0,background:'#102c4f',padding:18,borderRadius:8,overflowY:'auto'}}><strong style={{color:'#e6c382'}}>Private speaker notes</strong><p style={{fontSize:'clamp(17px,1.45vw,25px)',whiteSpace:'pre-wrap',lineHeight:1.5}}>{info.slides[index]?.notes||'No notes on this slide.'}</p></div>
+ <div style={{flex:'1 1 0',minHeight:0,background:'#102c4f',padding:18,borderRadius:8,overflowY:'auto'}}><strong style={{color:'#e6c382'}}>Private speaker notes</strong><p style={{fontSize:'clamp(16px,1.3vw,22px)',whiteSpace:'pre-wrap',lineHeight:1.5}}>{info.slides[index]?.notes||'No notes on this slide.'}</p></div>
   </div></div>
  <footer style={{display:'flex',alignItems:'center',justifyContent:'center',gap:18}}><button type="button" disabled={index===0} onClick={()=>{const n=Math.max(0,index-1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>← Previous</button><strong>{index+1} / {total}</strong><button type="button" disabled={index>=total-1} onClick={()=>{const n=Math.min(total-1,index+1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>Next →</button></footer>
  </div>}
