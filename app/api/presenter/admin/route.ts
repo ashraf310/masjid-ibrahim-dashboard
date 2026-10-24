@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from 'next/server';
-import {randomBytes,createHash} from 'node:crypto';
+import {randomBytes,createHash,randomInt} from 'node:crypto';
 import {stagingDbStatus} from '../../../../lib/staging-presenter-server';
 import {deletePresentationAssets} from '../../../../lib/delete-staging-presentation';
 export const runtime='nodejs';export const dynamic='force-dynamic';
@@ -30,11 +30,11 @@ export async function POST(req:NextRequest){
  if(input.action==='create'){
   const label=typeof input.label==='string'?input.label.trim():'';
   if(label.length<1||label.length>100)return NextResponse.json({error:'Enter presenter name (1-100 characters)'},{status:400,headers});
-  const code=randomBytes(12).toString('base64url');const hash=createHash('sha256').update(randomBytes(32)).digest('hex');const codeHash=createHash('sha256').update(code).digest('hex');
+  const code=String(randomInt(0,10000)).padStart(4,'0');const hash=createHash('sha256').update(randomBytes(32)).digest('hex');const codeHash=createHash('sha256').update(code).digest('hex');
   const {data,error}=await db.from('presenter_links').insert({label,token_hash:hash,code_hash:codeHash}).select('id,label,created_at,revoked_at').single();
-  if(error)return NextResponse.json({error:'Cannot generate presenter link'},{status:503,headers});
+  if(error)return NextResponse.json({error:'Cannot generate presenter PIN'},{status:503,headers});
   const base=new URL(req.url).origin;
-  return NextResponse.json({presenter:data,link:base+'/presenter',code,notice:'Share the permanent presenter URL and this code privately. The code is displayed once.'},{status:201,headers});
+  return NextResponse.json({presenter:data,link:base+'/presenter',code,notice:'Share the permanent presenter URL and this code privately. The 4-digit code is displayed once.'},{status:201,headers});
  }
  if(input.action==='status'){
   const {data,error}=await db.from('presentations').select('id,title,state,created_at,source_format').limit(1).maybeSingle();
