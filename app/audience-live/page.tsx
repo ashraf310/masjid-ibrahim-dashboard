@@ -6,7 +6,9 @@ export default function FixedAudienceScreen(){
  const [screen,setScreen]=useState<Audience>({state:'waiting'});
  const [error,setError]=useState('');
  const [fullscreen,setFullscreen]=useState(false);
+ const [tvView,setTvView]=useState(false);
  useEffect(()=>{
+  setTvView(new URLSearchParams(window.location.search).get('tv')==='1');
   const listener=()=>setFullscreen(Boolean(document.fullscreenElement));
   document.addEventListener('fullscreenchange',listener);
   let active=true;
@@ -26,7 +28,7 @@ export default function FixedAudienceScreen(){
  },[]);
  async function toggle(){try{if(document.fullscreenElement)await document.exitFullscreen();else await root.current?.requestFullscreen()}catch{setError('Fullscreen unavailable. Try F11.')}}
  return <main ref={root} style={{position:'relative',margin:0,width:'100vw',height:'100vh',overflow:'hidden',background:'#061831',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Arial,sans-serif'}}>
- <button type="button" onClick={()=>void toggle()} style={{position:'absolute',top:12,right:12,zIndex:2,border:'1px solid #d2ac62',borderRadius:7,padding:'10px 13px',background:'#12395f',color:'#fff',opacity:fullscreen?.2:.9,cursor:'pointer'}}>{fullscreen?'Exit fullscreen':'Fullscreen ⛶'}</button>
+ {!tvView&&<button type="button" onClick={()=>void toggle()} style={{position:'absolute',top:12,right:12,zIndex:2,border:'1px solid #d2ac62',borderRadius:7,padding:'10px 13px',background:'#12395f',color:'#fff',opacity:fullscreen?.2:.9,cursor:'pointer'}}>{fullscreen?'Exit fullscreen':'Fullscreen ⛶'}</button>}
  {screen.state==='live'&&screen.slideUrl?
  <img src={screen.slideUrl} alt={'Live presentation slide '+((screen.slide??0)+1)} style={{maxHeight:'100%',maxWidth:'100%',objectFit:'contain'}}/>:
  <div style={{textAlign:'center',padding:24}}><h1 style={{color:'#e1bc76'}}>Masjid Ibrahim</h1><p>Waiting for live presentation</p></div>}
