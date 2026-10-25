@@ -7,12 +7,12 @@ export default function FixedAudienceScreen(){
  const [error,setError]=useState('');
  const [fullscreen,setFullscreen]=useState(false);
  const [tvView,setTvView]=useState(false);
- const [questionsUrl,setQuestionsUrl]=useState('https://masjid-ibrahim-staging.vercel.app/questions');
+ const [questionsUrl,setQuestionsUrl]=useState('https://masjid-ibrahim-staging.vercel.app/q');
  useEffect(()=>{
   setTvView(new URLSearchParams(window.location.search).get('tv')==='1');
   // A localhost URL cannot be opened from a congregant's phone. Use the public staging URL when testing locally.
   const local=['localhost','127.0.0.1'].includes(window.location.hostname);
-  setQuestionsUrl((local?'https://masjid-ibrahim-staging.vercel.app':window.location.origin)+'/questions');
+  setQuestionsUrl((local?'https://masjid-ibrahim-staging.vercel.app':window.location.origin)+'/q');
   const listener=()=>setFullscreen(Boolean(document.fullscreenElement));
   document.addEventListener('fullscreenchange',listener);
   let active=true;
@@ -38,16 +38,13 @@ export default function FixedAudienceScreen(){
   <div style={{flex:1,minHeight:0,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
    <img src={screen.slideUrl} alt={'Live presentation slide '+((screen.slide??0)+1)} style={{maxHeight:'100%',maxWidth:'100%',objectFit:'contain'}}/>
   </div>
-  <div aria-label="Ask questions during this presentation" style={{flex:'0 0 clamp(115px,15vh,180px)',boxSizing:'border-box',background:'#082B4D',borderTop:'3px solid #D8B26A',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'1.8vw',padding:'10px 3vw',color:'#fff'}}>
-   <div style={{minWidth:0,flex:1}}>
-    <div style={{fontSize:'clamp(19px,2.1vw,39px)',fontWeight:800,color:'#D8B26A',lineHeight:1.2}}>HAVE A QUESTION?</div>
-    <div style={{fontSize:'clamp(14px,1.35vw,25px)',marginTop:5}}>Scan the QR code or visit the link to submit your question.</div>
-    <a href={questionsUrl} target="_blank" rel="noreferrer" style={{color:'#fff',textDecoration:'underline',textUnderlineOffset:4,fontSize:'clamp(13px,1.4vw,26px)',display:'block',marginTop:7,overflowWrap:'anywhere'}}>{questionsUrl.replace(/^https?:\/\//,'')}</a>
-   </div>
-   <div style={{background:'#fff',border:'5px solid #D8B26A',borderRadius:12,padding:5,flexShrink:0,width:'clamp(94px,12vh,145px)',height:'clamp(94px,12vh,145px)',boxSizing:'border-box'}}>
-    <img src={'https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=8&data='+encodeURIComponent(questionsUrl)} alt={'QR code to submit questions at '+questionsUrl} style={{width:'100%',height:'100%',objectFit:'contain',display:'block'}}/>
-   </div>
+  <div aria-label="Audience question QR" style={{position:'absolute',right:'1.5vw',top:'1.5vh',zIndex:3,background:'#fff',padding:'clamp(5px,.5vw,10px)',border:'3px solid #D8B26A',borderRadius:12,boxShadow:'0 3px 16px #0008',width:'clamp(92px,9vw,154px)',aspectRatio:'1',boxSizing:'border-box'}}>
+   <img src={'https://api.qrserver.com/v1/create-qr-code/?size=360x360&ecc=H&margin=12&data='+encodeURIComponent(questionsUrl)} alt={'Scan to ask a question at '+questionsUrl} style={{display:'block',height:'100%',width:'100%',objectFit:'contain'}}/>
+   <span aria-hidden="true" style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',background:'#fff',color:'#082B4D',fontSize:'clamp(13px,1.7vw,26px)',fontWeight:700,padding:'1px 3px',borderRadius:3,lineHeight:1.1}}>ﷺ</span>
   </div>
+  <footer aria-label="Ask a question" style={{height:'clamp(46px,6vh,72px)',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',boxSizing:'border-box',padding:'4px 15vw 4px 2vw',background:'#082B4D',borderTop:'2px solid #D8B26A',color:'#fff',fontSize:'clamp(16px,1.7vw,31px)',fontWeight:600,whiteSpace:'nowrap'}}>
+   Ask a question at&nbsp;<a href={questionsUrl} target="_blank" rel="noreferrer" style={{color:'#D8B26A',textDecoration:'none',fontWeight:800}}>{questionsUrl.replace(/^https?:\/\//,'')}</a>
+  </footer>
  </div>:
  <div style={{textAlign:'center',padding:24}}><h1 style={{color:'#e1bc76'}}>Masjid Ibrahim</h1><p>Waiting for live presentation</p></div>}
  {error&&<p role="status" style={{position:'absolute',bottom:10,left:18,fontSize:12,color:'#f2d7a5'}}>{error}</p>}
