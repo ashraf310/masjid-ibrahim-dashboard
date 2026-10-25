@@ -40,7 +40,7 @@ export default function FixedAudienceScreen(){
   </div>
   <div aria-label="Audience question QR" style={{position:'absolute',right:'1.5vw',top:'1.5vh',zIndex:3,background:'#fff',padding:'clamp(5px,.5vw,10px)',border:'3px solid #D8B26A',borderRadius:12,boxShadow:'0 3px 16px #0008',width:'clamp(92px,9vw,154px)',aspectRatio:'1',boxSizing:'border-box'}}>
    <img src={'https://api.qrserver.com/v1/create-qr-code/?size=360x360&ecc=H&margin=12&data='+encodeURIComponent(questionsUrl)} alt={'Scan to ask a question at '+questionsUrl} style={{display:'block',height:'100%',width:'100%',objectFit:'contain'}}/>
-   <span aria-hidden="true" style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',background:'#fff',color:'#082B4D',fontSize:'clamp(13px,1.7vw,26px)',fontWeight:700,padding:'1px 3px',borderRadius:3,lineHeight:1.1}}>ﷺ</span>
+   <span aria-hidden="true" style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',background:'#fff',color:'#082B4D',fontSize:'clamp(13px,1.7vw,26px)',fontWeight:700,padding:'1px 3px',borderRadius:3,lineHeight:1.1}}>محمد</span>
   </div>
   <footer aria-label="Ask a question" style={{height:'clamp(46px,6vh,72px)',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',boxSizing:'border-box',padding:'4px 15vw 4px 2vw',background:'#082B4D',borderTop:'2px solid #D8B26A',color:'#fff',fontSize:'clamp(16px,1.7vw,31px)',fontWeight:600,whiteSpace:'nowrap'}}>
    Ask a question at&nbsp;<a href={questionsUrl} target="_blank" rel="noreferrer" style={{color:'#D8B26A',textDecoration:'none',fontWeight:800}}>{questionsUrl.replace(/^https?:\/\//,'')}</a>
