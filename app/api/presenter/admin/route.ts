@@ -27,6 +27,22 @@ export async function POST(req:NextRequest){
  let body:unknown;try{body=await req.json()}catch{return NextResponse.json({error:'Invalid request'},{status:400,headers})}
  if(!body||typeof body!=='object')return NextResponse.json({error:'Invalid request'},{status:400,headers});
  const input=body as Record<string,unknown>;
+ if(input.action==='qa-settings'){
+  const {data:row,error}=await db.from('display_config').select('published').eq('id',1).single();
+  if(error||!row)return NextResponse.json({error:'Staging display configuration unavailable'},{status:503,headers});
+  return NextResponse.json({enabled:row.published?.d02QaEnabled!==false,url:row.published?.d02QaUrl||'https://masjid-ibrahim-staging.vercel.app/q'},{headers});
+ }
+ if(input.action==='qa-update'){
+  if(typeof input.enabled!=='boolean'||typeof input.url!=='string')return NextResponse.json({error:'Invalid Q&A settings'},{status:400,headers});
+  let parsed:URL;try{parsed=new URL(input.url.trim())}catch{return NextResponse.json({error:'Enter a valid HTTPS question URL'},{status:400,headers})}
+  if(parsed.protocol!=='https:'||parsed.username||parsed.password||parsed.hash||input.url.length>220)return NextResponse.json({error:'Use a public HTTPS URL, maximum 220 characters'},{status:400,headers});
+  const {data:row,error:readError}=await db.from('display_config').select('published').eq('id',1).single();
+  if(readError||!row)return NextResponse.json({error:'Staging display configuration unavailable'},{status:503,headers});
+  const published={...(row.published||{}),d02QaEnabled:input.enabled,d02QaUrl:parsed.toString()};
+  const {error}=await db.from('display_config').update({published}).eq('id',1);
+  if(error)return NextResponse.json({error:'Could not save Q&A settings'},{status:503,headers});
+  return NextResponse.json({ok:true,enabled:input.enabled,url:parsed.toString()},{headers});
+ }
  if(input.action==='create'){
   const label=typeof input.label==='string'?input.label.trim():'';
   if(label.length<1||label.length>100)return NextResponse.json({error:'Enter presenter name (1-100 characters)'},{status:400,headers});
