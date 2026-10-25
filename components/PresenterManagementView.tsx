@@ -2,12 +2,12 @@
 import {useEffect,useState} from 'react';
 import {createClient, type SupabaseClient} from '@supabase/supabase-js';
 type Presenter={id:string;label:string;created_at:string;revoked_at:string|null};
-const url=process.env.NEXT_PUBLIC_STAGING_SUPABASE_URL;
-const key=process.env.NEXT_PUBLIC_STAGING_SUPABASE_PUBLISHABLE_KEY;
+const url=process.env.NEXT_PUBLIC_SUPABASE_URL||process.env.NEXT_PUBLIC_STAGING_SUPABASE_URL;
+const key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY||process.env.NEXT_PUBLIC_STAGING_SUPABASE_PUBLISHABLE_KEY;
 export default function PresenterManagementView({embedded=false}:{embedded?:boolean}){
- const [qaEnabled,setQaEnabled]=useState(true),[qaUrl,setQaUrl]=useState('https://masjid-ibrahim-staging.vercel.app/q'),[qaLoaded,setQaLoaded]=useState(false);
+ const [qaEnabled,setQaEnabled]=useState(true),[qaUrl,setQaUrl]=useState('/q'),[qaLoaded,setQaLoaded]=useState(false);
  const [generatedCode,setGeneratedCode]=useState('');const [presentation,setPresentation]=useState<{id:string;title:string;state:string}|null>(null);const [client,setClient]=useState<SupabaseClient|null>(null),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[jwt,setJwt]=useState(''),[label,setLabel]=useState(''),[presenters,setPresenters]=useState<Presenter[]>([]),[link,setLink]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
- useEffect(()=>{if(!url||!key){setNotice('Staging browser authentication is not configured.');return;}const c=createClient(url,key);setClient(c);c.auth.getSession().then(x=>setJwt(x.data.session?.access_token||''));const {data:{subscription}}=c.auth.onAuthStateChange((_event,session)=>setJwt(session?.access_token||''));return()=>subscription.unsubscribe()},[]);
+ useEffect(()=>{if(!url||!key){setNotice('Presenter browser authentication is not configured.');return;}const c=createClient(url,key);setClient(c);c.auth.getSession().then(x=>setJwt(x.data.session?.access_token||''));const {data:{subscription}}=c.auth.onAuthStateChange((_event,session)=>setJwt(session?.access_token||''));return()=>subscription.unsubscribe()},[]);
  async function qaSettings(save:boolean){
   if(!client)return;
   setBusy(true);
