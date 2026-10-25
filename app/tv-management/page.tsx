@@ -2,8 +2,8 @@
 import {useEffect,useState} from 'react';
 import {createClient} from '@supabase/supabase-js';
 type TV={id:string;location:string;default_dashboard:string;follow_d02:boolean;d05_override:boolean;enabled:boolean;paired_at:string|null};
-const url=process.env.NEXT_PUBLIC_STAGING_SUPABASE_URL;
-const key=process.env.NEXT_PUBLIC_STAGING_SUPABASE_PUBLISHABLE_KEY;
+const url=process.env.NEXT_PUBLIC_SUPABASE_URL||process.env.NEXT_PUBLIC_STAGING_SUPABASE_URL;
+const key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY||process.env.NEXT_PUBLIC_STAGING_SUPABASE_PUBLISHABLE_KEY;
 export default function TVManagement(){
  const [db]=useState(()=>url&&key?createClient(url,key):null);
  const [pairing,setPairing]=useState<{id:string;code:string;expiresAt:string}|null>(null);const [jwt,setJwt]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[rows,setRows]=useState<TV[]>([]),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
