@@ -1,9 +1,10 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
-type Audience={state:string;presentationId?:string;slide?:number;total?:number;slideUrl?:string|null};
+type Audience={state:string;presentationId?:string;slide?:number;total?:number;slideUrl?:string|null;qaEnabled?:boolean;qaUrl?:string};
 export default function FixedAudienceScreen(){
  const root=useRef<HTMLElement>(null),last=useRef(''),lastRefresh=useRef(0);
  const [screen,setScreen]=useState<Audience>({state:'waiting'});
+ const screenQa=useRef<{enabled?:boolean;url?:string}>({});
  const [error,setError]=useState('');
  const [fullscreen,setFullscreen]=useState(false);
  const [tvView,setTvView]=useState(false);
@@ -23,7 +24,7 @@ export default function FixedAudienceScreen(){
     const state=await response.json() as Audience;
     if(!active)return;
     const identity=state.state+':'+(state.presentationId||'')+':'+(state.slide??-1);
-    if(identity!==last.current||Date.now()-lastRefresh.current>45000){last.current=identity;lastRefresh.current=Date.now();setScreen(state);}
+    if(identity!==last.current||Date.now()-lastRefresh.current>45000||state.qaEnabled!==screenQa.current.enabled||state.qaUrl!==screenQa.current.url){last.current=identity;lastRefresh.current=Date.now();screenQa.current={enabled:state.qaEnabled,url:state.qaUrl};setScreen(state);}
     setError('');
    }catch{if(active)setError('Reconnecting to staging audience feed...')}
   };
@@ -38,13 +39,13 @@ export default function FixedAudienceScreen(){
   <div style={{flex:1,minHeight:0,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
    <img src={screen.slideUrl} alt={'Live presentation slide '+((screen.slide??0)+1)} style={{maxHeight:'100%',maxWidth:'100%',objectFit:'contain'}}/>
   </div>
-  <div aria-label="Audience question QR" style={{position:'absolute',right:'1.5vw',top:'1.5vh',zIndex:3,background:'#fff',padding:'clamp(5px,.5vw,10px)',border:'3px solid #D8B26A',borderRadius:12,boxShadow:'0 3px 16px #0008',width:'clamp(92px,9vw,154px)',aspectRatio:'1',boxSizing:'border-box'}}>
-   <img src={'https://api.qrserver.com/v1/create-qr-code/?size=360x360&ecc=H&margin=12&data='+encodeURIComponent(questionsUrl)} alt={'Scan to ask a question at '+questionsUrl} style={{display:'block',height:'100%',width:'100%',objectFit:'contain'}}/>
+  {screen.qaEnabled!==false&&<div aria-label="Audience question QR" style={{position:'absolute',left:'1.4vw',bottom:'clamp(52px,6vh,78px)',zIndex:3,background:'#fff',padding:'clamp(5px,.5vw,10px)',border:'3px solid #D8B26A',borderRadius:12,boxShadow:'0 3px 16px #0008',width:'clamp(92px,9vw,154px)',aspectRatio:'1',boxSizing:'border-box'}}>
+   <img src={'https://api.qrserver.com/v1/create-qr-code/?size=360x360&ecc=H&margin=12&data='+encodeURIComponent(screen.qaUrl||questionsUrl)} alt={'Scan to ask a question at '+(screen.qaUrl||questionsUrl)} style={{display:'block',height:'100%',width:'100%',objectFit:'contain'}}/>
    <span aria-hidden="true" style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',background:'#fff',color:'#082B4D',fontSize:'clamp(13px,1.7vw,26px)',fontWeight:700,padding:'1px 3px',borderRadius:3,lineHeight:1.1}}>محمد</span>
-  </div>
-  <footer aria-label="Ask a question" style={{height:'clamp(46px,6vh,72px)',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',boxSizing:'border-box',padding:'4px 15vw 4px 2vw',background:'#082B4D',borderTop:'2px solid #D8B26A',color:'#fff',fontSize:'clamp(16px,1.7vw,31px)',fontWeight:600,whiteSpace:'nowrap'}}>
-   Ask a question at&nbsp;<a href={questionsUrl} target="_blank" rel="noreferrer" style={{color:'#D8B26A',textDecoration:'none',fontWeight:800}}>{questionsUrl.replace(/^https?:\/\//,'')}</a>
-  </footer>
+  </div>}
+  {screen.qaEnabled!==false&&<footer aria-label="Ask a question" style={{height:'clamp(46px,6vh,72px)',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',boxSizing:'border-box',padding:'4px 15vw 4px 2vw',background:'#082B4D',borderTop:'2px solid #D8B26A',color:'#fff',fontSize:'clamp(16px,1.7vw,31px)',fontWeight:600,whiteSpace:'nowrap'}}>
+   Ask a question at&nbsp;<a href={screen.qaUrl||questionsUrl} target="_blank" rel="noreferrer" style={{color:'#D8B26A',textDecoration:'none',fontWeight:800}}>{(screen.qaUrl||questionsUrl).replace(/^https?:\/\//,'')}</a>
+  </footer>}
  </div>:
  <div style={{textAlign:'center',padding:24}}><h1 style={{color:'#e1bc76'}}>Masjid Ibrahim</h1><p>Waiting for live presentation</p></div>}
  {error&&<p role="status" style={{position:'absolute',bottom:10,left:18,fontSize:12,color:'#f2d7a5'}}>{error}</p>}
