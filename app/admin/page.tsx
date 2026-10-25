@@ -2,7 +2,7 @@
 import {useEffect,useState} from 'react';
 import {browserDb} from '../../lib/supabase';
 import Dashboard from '../../components/Dashboard';
-import {PresenterManagementView} from '../presenter-management/page';
+import PresenterManagementView from '../../components/PresenterManagementView';
 import {Config,DEFAULT_CONFIG,Flyer,normalizeConfig,PRAYERS,PrayerSchedule,validHHMM} from '../../lib/types';
 import type {User} from '@supabase/supabase-js';
 async function optimizeFlyer(file:File):Promise<File>{
