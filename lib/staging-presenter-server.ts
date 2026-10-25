@@ -5,7 +5,10 @@ const STAGING_PROJECT_ID='prj_TX0ZefGHlJUidnjfSMYCXIjm6NuZ';
 export function stagingDbStatus(){
  const id=process.env.VERCEL_PROJECT_ID;
  const host=process.env.VERCEL_URL||'';
- if(id!==STAGING_PROJECT_ID && !host.startsWith('masjid-ibrahim-staging-'))return {db:null,reason:'STAGING_PROJECT_CHECK_FAILED'};
+ const isVercelStaging=id===STAGING_PROJECT_ID||host.startsWith('masjid-ibrahim-staging-');
+ // Allow explicit LOCAL development against the same staging Supabase project; never allow a different Vercel project.
+ const localStaging=process.env.NODE_ENV==='development'&&!id&&!host&&Boolean(process.env.NEXT_PUBLIC_STAGING_SUPABASE_URL)&&process.env.SUPABASE_URL?.trim()===process.env.NEXT_PUBLIC_STAGING_SUPABASE_URL?.trim();
+ if(!isVercelStaging&&!localStaging)return {db:null,reason:'STAGING_PROJECT_CHECK_FAILED'};
  const url=process.env.SUPABASE_URL?.trim();
  const key=process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
  if(!url)return {db:null,reason:'SUPABASE_URL_MISSING'};
