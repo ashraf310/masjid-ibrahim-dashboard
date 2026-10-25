@@ -10,7 +10,7 @@ export default function FixedAudienceScreen(){
  const [tvView,setTvView]=useState(false);
  const [questionsUrl,setQuestionsUrl]=useState('https://masjid-ibrahim-staging.vercel.app/q');
  useEffect(()=>{
-  setTvView(new URLSearchParams(window.location.search).get('tv')==='1');
+  setTvView(new URLSearchParams(window.location.search).get('tv')==='1'||/\b(wv|android tv|smart-tv|smarttv|aft[a-z0-9]+)\b/i.test(navigator.userAgent));
   // A localhost URL cannot be opened from a congregant's phone. Use the public staging URL when testing locally.
   const local=['localhost','127.0.0.1'].includes(window.location.hostname);
   setQuestionsUrl((local?'https://masjid-ibrahim-staging.vercel.app':window.location.origin)+'/q');
@@ -32,18 +32,18 @@ export default function FixedAudienceScreen(){
   return()=>{active=false;window.clearInterval(timer);document.removeEventListener('fullscreenchange',listener)};
  },[]);
  async function toggle(){try{if(document.fullscreenElement)await document.exitFullscreen();else await root.current?.requestFullscreen()}catch{setError('Fullscreen unavailable. Try F11.')}}
- return <main ref={root} style={{position:'relative',margin:0,width:'100vw',height:'100vh',overflow:'hidden',background:'#061831',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Arial,sans-serif'}}>
+ return <main ref={root} style={{position:'relative',margin:0,width:'100vw',height:'100dvh',overflow:'hidden',boxSizing:'border-box',padding:'2.5vh 2.5vw 3vh',background:'#061831',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Arial,sans-serif'}}>
  {!tvView&&<button type="button" onClick={()=>void toggle()} style={{position:'absolute',top:12,right:12,zIndex:2,border:'1px solid #d2ac62',borderRadius:7,padding:'10px 13px',background:'#12395f',color:'#fff',opacity:fullscreen?.2:.9,cursor:'pointer'}}>{fullscreen?'Exit fullscreen':'Fullscreen ⛶'}</button>}
  {screen.state==='live'&&screen.slideUrl?
  <div style={{height:'100%',width:'100%',display:'flex',flexDirection:'column',minHeight:0}}>
-  <div style={{flex:1,minHeight:0,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
-   <img src={screen.slideUrl} alt={'Live presentation slide '+((screen.slide??0)+1)} style={{maxHeight:'100%',maxWidth:'100%',objectFit:'contain'}}/>
+  <div style={{flex:1,minHeight:0,minWidth:0,width:'100%',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',padding:'1vh 0',boxSizing:'border-box'}}>
+   <img src={screen.slideUrl} alt={'Live presentation slide '+((screen.slide??0)+1)} style={{display:'block',width:'100%',height:'100%',maxHeight:'100%',maxWidth:'100%',objectFit:'contain',objectPosition:'center center',flexShrink:1}}/>
   </div>
-  {screen.qaEnabled!==false&&<div aria-label="Audience question QR" style={{position:'absolute',left:'1.4vw',bottom:'clamp(52px,6vh,78px)',zIndex:3,background:'#fff',padding:'clamp(5px,.5vw,10px)',border:'3px solid #D8B26A',borderRadius:12,boxShadow:'0 3px 16px #0008',width:'clamp(92px,9vw,154px)',aspectRatio:'1',boxSizing:'border-box'}}>
+  {screen.qaEnabled!==false&&<div aria-label="Audience question QR" style={{position:'absolute',left:'3vw',bottom:'clamp(58px,9vh,104px)',zIndex:3,background:'#fff',padding:'clamp(5px,.5vw,10px)',border:'3px solid #D8B26A',borderRadius:12,boxShadow:'0 3px 16px #0008',width:'clamp(92px,9vw,154px)',aspectRatio:'1',boxSizing:'border-box'}}>
    <img src={'https://api.qrserver.com/v1/create-qr-code/?size=360x360&ecc=H&margin=12&data='+encodeURIComponent(screen.qaUrl||questionsUrl)} alt={'Scan to ask a question at '+(screen.qaUrl||questionsUrl)} style={{display:'block',height:'100%',width:'100%',objectFit:'contain'}}/>
    <span aria-hidden="true" style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',background:'#fff',color:'#082B4D',fontSize:'clamp(13px,1.7vw,26px)',fontWeight:700,padding:'1px 3px',borderRadius:3,lineHeight:1.1}}>محمد</span>
   </div>}
-  {screen.qaEnabled!==false&&<footer aria-label="Ask a question" style={{height:'clamp(46px,6vh,72px)',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',boxSizing:'border-box',padding:'4px 15vw 4px 2vw',background:'#082B4D',borderTop:'2px solid #D8B26A',color:'#fff',fontSize:'clamp(16px,1.7vw,31px)',fontWeight:600,whiteSpace:'nowrap'}}>
+  {screen.qaEnabled!==false&&<footer aria-label="Ask a question" style={{height:'clamp(46px,6vh,72px)',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',boxSizing:'border-box',padding:'4px 5vw',background:'#082B4D',borderTop:'2px solid #D8B26A',color:'#fff',fontSize:'clamp(16px,1.7vw,31px)',fontWeight:600,whiteSpace:'nowrap'}}>
    Ask a question at&nbsp;<a href={screen.qaUrl||questionsUrl} target="_blank" rel="noreferrer" style={{color:'#D8B26A',textDecoration:'none',fontWeight:800}}>{(screen.qaUrl||questionsUrl).replace(/^https?:\/\//,'')}</a>
   </footer>}
  </div>:
