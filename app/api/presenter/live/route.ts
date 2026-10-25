@@ -42,5 +42,5 @@ export async function POST(req:NextRequest){
   try{await deletePresentationAssets(db,id)}catch(e){return NextResponse.json({error:'Presentation ended, but cleanup did not finish. Admin can clear remaining assets. '+(e instanceof Error?e.message:'')},{status:503,headers})}
   return NextResponse.json({ok:true,cleared:true},{headers});
  }else return NextResponse.json({error:'Invalid action'},{status:400,headers});
- return NextResponse.json({ok:true,audiencePath:'/audience-live'},{headers});
+ return NextResponse.json({ok:true,audiencePath:'/live'},{headers});
 }
