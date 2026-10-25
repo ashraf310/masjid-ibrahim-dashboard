@@ -3,7 +3,7 @@ import {serverDb} from '../../../lib/supabase';
 import {normalizeConfig,validHHMM} from '../../../lib/types';
 export async function POST(req:NextRequest){const db=serverDb();const adminEmail=process.env.STAGING_ADMIN_EMAIL||process.env.ADMIN_EMAIL;if(!db||!adminEmail)return NextResponse.json({error:'Server admin not configured'},{status:503});
  const bearer=req.headers.get('authorization')||'';if(!bearer.startsWith('Bearer '))return NextResponse.json({error:'Unauthorized'},{status:401});
- const {data:{user},error}=await db.auth.getUser(bearer.slice(7));if(error||!user||user.email?.toLowerCase()!==adminEmail.toLowerCase())return NextResponse.json({error:'Not authorized administrator'},{status:403});
+ const {data:{user},error}=await db.auth.getUser(bearer.slice(7));if(error||!user)return NextResponse.json({error:'Staging authentication failed. Check that your browser Supabase URL and SUPABASE_URL refer to the same project, and sign in again.',code:'STAGING_AUTH_MISMATCH'},{status:403});if(user.email?.trim().toLowerCase()!==adminEmail.trim().toLowerCase())return NextResponse.json({error:'Signed-in account is not the configured staging administrator. Verify STAGING_ADMIN_EMAIL and sign in again.',code:'STAGING_ADMIN_EMAIL_MISMATCH'},{status:403});
  try{const body=await req.json();if(!['save','publish','loadPublishedFlyers','loadDraft','listUnusedFlyers','deleteUnusedFlyer','publishD04'].includes(body.method))return NextResponse.json({error:'Unsupported operation'},{status:400});if(body.method==='publishD04'){
   const design=body.design;
   if(design!=='premium-01'&&design!=='blue-classic')return NextResponse.json({error:'Invalid D04 design'},{status:400});
