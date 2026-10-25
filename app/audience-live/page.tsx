@@ -47,7 +47,7 @@ export default function FixedAudienceScreen(){
    Ask a question at&nbsp;<a href={screen.qaUrl||questionsUrl} target="_blank" rel="noreferrer" style={{color:'#D8B26A',textDecoration:'none',fontWeight:800}}>{(screen.qaUrl||questionsUrl).replace(/^https?:\/\//,'')}</a>
   </footer>}
  </div>:
- <div style={{textAlign:'center',padding:24}}><h1 style={{color:'#e1bc76'}}>Masjid Ibrahim</h1><p>Waiting for live presentation</p></div>}
+ <div style={{textAlign:"center",padding:24,display:"flex",flexDirection:"column",alignItems:"center",gap:22}}><img src="/masjid-ibrahim-logo.svg" alt="Masjid Ibrahim official logo" style={{width:"clamp(150px,24vw,360px)",maxHeight:"48vh",objectFit:"contain"}}/><p style={{color:"#e8c582",fontSize:"clamp(20px,2vw,34px)",margin:0}}>Waiting for live presentation</p></div>}
  {error&&<p role="status" style={{position:'absolute',bottom:10,left:18,fontSize:12,color:'#f2d7a5'}}>{error}</p>}
  </main>;
 }
