@@ -102,6 +102,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  async function end(){try{await liveAction('end');setLiveMode(false);setPublishMessage('Presentation ended and cleared.');onEnded()}catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot end')}}
 
  const onPageCount=useCallback((n:number)=>setPageCount(n),[]);
+ const [showAdvanced,setShowAdvanced]=useState(false);
  const [converting,setConverting]=useState(false);
  const [convertError,setConvertError]=useState('');
  async function convertAutomatically(){
@@ -126,19 +127,27 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  if(e.key==='ArrowLeft'){e.preventDefault();setIndex(v=>{const n=Math.max(0,v-1);if(liveMode)void liveAction('advance',n).catch(err=>setPublishMessage(String(err)));return n})}
  };window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener)},[info,liveMode,resolvedId,presenterToken,qaOpen]);
  const total=info?.slides.length||0;
+ const slidesReady=Boolean(pdf&&pageCount===total&&total>0);
+ const prepared=Boolean(audiencePath);
  return <section style={{marginTop:22,padding:22,background:'#12395c',borderRadius:12}}>
- <h2>PowerPoint Presenter View</h2>
- <button type="button" disabled={!pdf||pageCount!==total} onClick={()=>setSpeakerMode(true)}>Open full-screen speaker view</button>
- <p style={{color:'#e0c68d'}}>The PPTX provides private speaker notes. To see accurate slide graphics, run the local PowerPoint conversion helper and click Convert PPTX automatically. Manual PDF export remains a fallback. Both files stay on this laptop for this preview.</p>
+ <h2 style={{marginBottom:6}}>Present Your PowerPoint</h2>
+ <p style={{marginTop:0,color:'#cbd9e9'}}>Follow the steps below. The audience sees slides only; your speaker notes remain private.</p>
+ <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:18}}>
+ {['1. Prepare slides','2. Send slides to display','3. Start presenting'].map((label,i)=><span key={label} style={{border:'1px solid #d2af71',borderRadius:25,padding:'8px 12px',color:(i===0&&!slidesReady||i===1&&slidesReady&&!prepared||i===2&&prepared)?'#081d39':'#dce4ef',background:(i===0&&!slidesReady||i===1&&slidesReady&&!prepared||i===2&&prepared)?'#e2bd77':'#17334f',fontWeight:700}}>{label}</span>)}
+ </div>
  {!info&&!error&&<p>Reading PowerPoint slide order and notes...</p>}
  {error&&<p role="alert" style={{color:'#ffbbb6'}}>{error}</p>}
  {info&&<><p>{total} PowerPoint slides detected</p>
- <div style={{padding:14,background:'#091f3b',borderRadius:8,marginBottom:16}}>
- <strong>Automatic PowerPoint conversion on this laptop</strong><p style={{fontSize:13}}>Start the local presenter helper once (Python 3 and LibreOffice required), then click below. . No slides or notes are sent to a cloud conversion service.</p><button type="button" disabled={converting} onClick={()=>void convertAutomatically()}>{converting?'Converting PowerPoint...':'Convert PPTX automatically'}</button>{convertError&&<p role="alert" style={{color:'#ffb8b8'}}>{convertError}</p>}{pdf&&<p style={{color:'#b7f0cc'}}>Slide PDF prepared locally: {pdf.name}</p>}<div style={{marginTop:14}}><label htmlFor="companion-pdf"><strong>Fallback: select your manually exported PDF</strong></label></div>
- <input id="companion-pdf" type="file" accept=".pdf,application/pdf" style={{display:'block',marginTop:12,maxWidth:'100%'}} onChange={e=>{const f=e.target.files?.[0]||null;setPdf(f&&f.name.toLowerCase().endsWith('.pdf')&&f.size<=50*1024*1024?f:null);setIndex(0)}}/>
- <p style={{fontSize:13,color:pageCount!==null&&pageCount!==total?'#ffbab0':'#c2d0e0'}}>{pageCount===null?'Waiting for converted slide pages...':pageCount===total?'Verified: '+pageCount+' rendered slides match the PowerPoint notes.':'Mismatch: converted PDF has '+pageCount+' pages while PPTX has '+total+' slides. Do not present until corrected.'}</p>
- </div>
- <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:16}}>
+ <section style={{padding:20,background:'#091f3b',borderRadius:10,marginBottom:18}}>
+ <h3 style={{margin:'0 0 10px'}}>Step 1 — Prepare your slides</h3>
+ <p style={{color:'#cbd9e9'}}>Convert your PowerPoint to display-quality slides. This happens on your laptop.</p>
+ <button type="button" disabled={converting||liveMode} onClick={()=>void convertAutomatically()} style={{fontSize:18,padding:'15px 22px'}}>{converting?'Preparing slides…':slidesReady?'Reconvert slides':'Prepare PowerPoint slides'}</button>
+ {convertError&&<p role="alert" style={{color:'#ffb8b8'}}>{convertError}</p>}
+ {pdf&&<p style={{color:'#b7f0cc'}}>Slide file available: {pdf.name}</p>}
+ <p role="status" style={{color:pageCount!==null&&pageCount!==total?'#ffbab0':'#c2d0e0'}}>{pageCount===null?'Slides not yet verified.':pageCount===total?'Ready: '+pageCount+' slides match your presentation.':'Slide count mismatch. Check the PowerPoint/PDF before going live.'}</p>
+ <details><summary style={{cursor:'pointer',color:'#e2bd77'}}>Having trouble? Upload a PDF instead</summary><p style={{fontSize:14}}>If automatic conversion is unavailable, export your PowerPoint as a PDF and select that file below.</p><input id="companion-pdf" type="file" accept=".pdf,application/pdf" style={{display:'block',margin:'12px 0',maxWidth:'100%'}} onChange={e=>{const f=e.target.files?.[0]||null;setPdf(f&&f.name.toLowerCase().endsWith('.pdf')&&f.size<=50*1024*1024?f:null);setIndex(0)}}/></details>
+ </section>
+ <details style={{marginBottom:18,padding:14,background:'#102d4e',borderRadius:10}}><summary style={{cursor:'pointer',fontWeight:700}}>Optional: Review slides and speaker notes</summary> <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:16}}>
  <div><strong>Current slide {index+1}</strong><div style={{marginTop:10,background:'#061b35',border:'1px solid #d1af70',borderRadius:8,aspectRatio:'16/9',display:'flex',justifyContent:'center',alignItems:'center',overflow:'hidden'}}>
  {pdf?<SlideCanvas file={pdf} page={index+1} onPageCount={onPageCount}/>:<span style={{padding:15,textAlign:'center'}}>Select the matching exported PDF to preview actual slide images.</span>}
  </div></div>
@@ -149,17 +158,18 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  <div style={{marginTop:16,padding:16,background:'#091f3b',borderRadius:8}}><strong>Private speaker notes</strong><p style={{whiteSpace:'pre-wrap',lineHeight:1.6}}>{info.slides[index]?.notes||'No speaker notes on this slide.'}</p></div>
   <div style={{display:'flex',gap:14,alignItems:'center',marginTop:15}}>
  <button type="button" disabled={index===0} onClick={()=>{const n=Math.max(0,index-1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>Previous</button><strong>{index+1} / {total}</strong><button type="button" disabled={index>=total-1} onClick={()=>{const n=Math.min(total-1,index+1);setIndex(n);if(liveMode)void liveAction('advance',n).catch(e=>setPublishMessage(String(e)))}}>Next</button></div>
- <section style={{marginTop:20,padding:16,border:'1px solid #d2af71',borderRadius:8}}>
- <h3>Staging audience test (not connected to Masjid TVs)</h3>
- <p style={{fontSize:13}}>Your converted slide images, but never your speaker notes, will be uploaded to private staging storage for this test.</p>
- {!presentationId&&<p role="status" style={{color:'#ffd58d'}}>When you click Prepare slides, this PPTX will be uploaded automatically if it is not already stored. Your presenter link remains unchanged.</p>}
- {presentationId&&pdf&&pageCount!==total&&<p role="status" style={{color:'#ffd58d'}}>Converted slide count does not match PowerPoint; please reconvert before publishing.</p>}
- <button type="button" disabled={publishing||!pdf||pageCount!==total||liveMode} onClick={()=>void publish()}>{publishing?'Publishing...':'Prepare slides for audience preview'}</button>
- {presentationId&&<button type="button" onClick={()=>void getAudienceLink()}>Retrieve existing audience link</button>}
- {audiencePath&&<p><a style={{color:'#e2bd77',textDecoration:'underline'}} href={audiencePath} target="_blank" rel="noopener noreferrer">Open private staging audience preview</a> — share only with test viewers.</p>}
- {audiencePath&&!liveMode&&<button type="button" disabled={publishing} onClick={()=>void start()}>Start staging presentation</button>}
- {liveMode&&<button type="button" onClick={()=>void end()}>End staging presentation</button>}
+</details>
+ <section style={{padding:20,background:'#091f3b',border:'1px solid #d2af71',borderRadius:10}}>
+ <h3 style={{marginTop:0}}>Step 2 — Prepare the audience display</h3>
+ <p style={{color:'#cbd9e9'}}>When your slides are ready, send the display versions to the staging screen. Speaker notes stay private.</p>
+ <button type="button" style={{fontSize:18,padding:'15px 22px'}} disabled={publishing||!slidesReady||liveMode} onClick={()=>void publish()}>{publishing?'Preparing audience display…':prepared?'Prepare slides again':'Prepare audience display'}</button>
  {publishMessage&&<p role="status">{publishMessage}</p>}
+ {prepared&&<p><a style={{color:'#e2bd77'}} href={audiencePath} target="_blank" rel="noopener noreferrer">View audience display in a new tab</a></p>}
+ <h3>Step 3 — Start presenting</h3>
+ <p style={{color:'#cbd9e9'}}>Start only when you are ready for the audience to see your slides.</p>
+ {!liveMode?<button type="button" style={{fontSize:20,padding:'16px 25px',background:'#e2bd77'}} disabled={!prepared||publishing} onClick={()=>void start()}>▶ Start presentation</button>:<><strong style={{color:'#a8f3bc',marginRight:12}}>● LIVE</strong><button type="button" style={{fontSize:18}} onClick={()=>setSpeakerMode(true)}>Open speaker view</button><button type="button" style={{background:'#c62828',color:'white',fontSize:18}} onClick={()=>void end()}>■ End presentation</button></>}
+ {!liveMode&&prepared&&<p style={{fontSize:14}}>Speaker view opens after you start. It shows your notes and slide controls privately.</p>}
+ <details style={{marginTop:20}}><summary style={{cursor:'pointer',color:'#e2bd77'}}>Advanced options and troubleshooting</summary>{presentationId&&<button type="button" onClick={()=>void getAudienceLink()}>Retrieve audience link</button>}<p style={{fontSize:13}}>Staging-only audience test. TV/PRISM broadcasting is not enabled here.</p></details>
  </section>
  {speakerMode&&<div role="dialog" aria-modal="true" aria-label="Full-screen speaker view" style={{position:'fixed',inset:0,zIndex:10000,background:'#07172e',color:'#fff',padding:20,boxSizing:'border-box',display:'flex',flexDirection:'column',gap:14}}>
  <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}><strong style={{fontSize:20}}>Masjid Ibrahim · Speaker View</strong><span>Slide {index+1} of {total} {liveMode?'· LIVE (STAGING)':'· PREVIEW'}</span><div style={{display:'flex',gap:12}}>{liveMode&&resolvedId&&<button type="button" onClick={()=>setQaOpen(true)}>Open Q&A</button>}<button type="button" onClick={()=>setSpeakerMode(false)} style={{background:"#c62828",color:"#ffffff",fontWeight:700,border:"none",borderRadius:6,padding:"11px 18px"}}>Exit speaker view</button></div></header>
