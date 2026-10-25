@@ -1,6 +1,28 @@
 {
-  "name":"masjid-ibrahim-dashboard","version":"0.1.0","private":true,
-  "scripts":{"dev":"next dev","build":"next build","start":"next start","typecheck":"tsc --noEmit"},
-  "dependencies":{"next":"^15.3.0","react":"^19.0.0","react-dom":"^19.0.0","@supabase/supabase-js":"^2.49.0","lucide-react":"^0.468.0"},
-  "devDependencies":{"typescript":"^5.7.0","@types/node":"^22.0.0","@types/react":"^19.0.0","@types/react-dom":"^19.0.0"}
+  "name": "masjid-ibrahim-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "predev": "node scripts/copy-pdf-worker.mjs",
+    "prebuild": "node scripts/copy-pdf-worker.mjs"
+  },
+  "dependencies": {
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "lucide-react": "^0.468.0",
+    "jszip": "^3.10.1",
+    "pdfjs-dist": "^4.10.38"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
 }

@@ -1,10 +1,20 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {serverDb} from '../../../lib/supabase';
 import {normalizeConfig,validHHMM} from '../../../lib/types';
-export async function POST(req:NextRequest){const db=serverDb();if(!db||!process.env.ADMIN_EMAIL)return NextResponse.json({error:'Server admin not configured'},{status:503});
+export async function POST(req:NextRequest){const db=serverDb();const adminEmail=process.env.STAGING_ADMIN_EMAIL||process.env.ADMIN_EMAIL;if(!db||!adminEmail)return NextResponse.json({error:'Server admin not configured'},{status:503});
  const bearer=req.headers.get('authorization')||'';if(!bearer.startsWith('Bearer '))return NextResponse.json({error:'Unauthorized'},{status:401});
- const {data:{user},error}=await db.auth.getUser(bearer.slice(7));if(error||!user||user.email?.toLowerCase()!==process.env.ADMIN_EMAIL.toLowerCase())return NextResponse.json({error:'Not authorized administrator'},{status:403});
- try{const body=await req.json();if(!['save','publish','loadPublishedFlyers','loadDraft','listUnusedFlyers','deleteUnusedFlyer'].includes(body.method))return NextResponse.json({error:'Unsupported operation'},{status:400});if(body.method==='listUnusedFlyers'||body.method==='deleteUnusedFlyer'){
+ const {data:{user},error}=await db.auth.getUser(bearer.slice(7));if(error||!user)return NextResponse.json({error:'Staging authentication failed. Check that your browser Supabase URL and SUPABASE_URL refer to the same project, and sign in again.',code:'STAGING_AUTH_MISMATCH'},{status:403});if(user.email?.trim().toLowerCase()!==adminEmail.trim().toLowerCase())return NextResponse.json({error:'Signed-in account is not the configured staging administrator. Verify STAGING_ADMIN_EMAIL and sign in again.',code:'STAGING_ADMIN_EMAIL_MISMATCH'},{status:403});
+ try{const body=await req.json();if(!['save','publish','loadPublishedFlyers','loadDraft','listUnusedFlyers','deleteUnusedFlyer','publishD04'].includes(body.method))return NextResponse.json({error:'Unsupported operation'},{status:400});if(body.method==='publishD04'){
+  const design=body.design;
+  if(design!=='premium-01'&&design!=='blue-classic')return NextResponse.json({error:'Invalid D04 design'},{status:400});
+  const {data:row,error:readError}=await db.from('display_config').select('draft,published').eq('id',1).single();
+  if(readError)return NextResponse.json({error:'Cannot read staging display_config: '+readError.message,code:'DISPLAY_CONFIG_READ_FAILED'},{status:503});if(!row)return NextResponse.json({error:'Staging display_config has no row with id=1. Check that SUPABASE_URL points to the initialized staging database.',code:'DISPLAY_CONFIG_ROW_MISSING'},{status:503});
+  const published={...normalizeConfig(row.published),d04Design:design,d04WhatsAppUrl:normalizeConfig(body.config).d04WhatsAppUrl,d04Ticker:normalizeConfig(body.config).d04Ticker};
+  const draft={...normalizeConfig(row.draft),d04Design:design,d04WhatsAppUrl:published.d04WhatsAppUrl,d04Ticker:published.d04Ticker};
+  const {data:saved,error:writeError}=await db.from('display_config').update({published,draft,published_at:new Date().toISOString()}).eq('id',1).select('published').single();
+  if(writeError||!saved||normalizeConfig(saved.published).d04Design!==design)return NextResponse.json({error:'Unable to verify D04 design publication'},{status:503});
+  return NextResponse.json({ok:true,design,publishedAt:new Date().toISOString()},{headers:{'Cache-Control':'no-store'}});
+ }if(body.method==='listUnusedFlyers'||body.method==='deleteUnusedFlyer'){
  const {data:row,error:readError}=await db.from('display_config').select('draft,published').eq('id',1).single();if(readError)throw readError;
  const referenced=new Set([...normalizeConfig(row?.draft).flyers,...normalizeConfig(row?.published).flyers].map(f=>{try{const u=new URL(f.url);const marker='/storage/v1/object/public/flyers/';return u.pathname.includes(marker)?decodeURIComponent(u.pathname.split(marker)[1]):null}catch{return null}}).filter((p):p is string=>Boolean(p)));
  const bucket=db.storage.from('flyers');
@@ -19,11 +29,11 @@ export async function POST(req:NextRequest){const db=serverDb();if(!db||!process
  }
  const {data:objects,error:listError}=await bucket.list('',{limit:1000,sortBy:{column:'created_at',order:'desc'}});if(listError)throw listError;
  return NextResponse.json({files:(objects||[]).filter(f=>f.name&&!referenced.has(f.name)).map(f=>({name:f.name,createdAt:f.created_at}))},{headers:{'Cache-Control':'no-store'}});
- }if(body.method==='loadDraft'){const {data,error:readError}=await db.from('display_config').select('draft,published').eq('id',1).single();if(readError)throw readError;return NextResponse.json({draft:normalizeConfig(data?.draft),publishedFlyerCount:normalizeConfig(data?.published).flyers.length},{headers:{'Cache-Control':'no-store'}});}if(body.method==='loadPublishedFlyers'){const {data,error:readError}=await db.from('display_config').select('published').eq('id',1).single();if(readError)throw readError;return NextResponse.json({flyers:normalizeConfig(data?.published).flyers},{headers:{'Cache-Control':'no-store'}});}const config=normalizeConfig(body.config);if(config.prayer){const entries=[...Object.values(config.prayer.prayers).flatMap(t=>[t.start,t.iqamah]),config.prayer.jumuah1,config.prayer.jumuah2];if(entries.some(t=>t&&!validHHMM(t)))return NextResponse.json({error:'Invalid prayer time format'},{status:400});config.prayer={...config.prayer,source:'manual',verifiedAt:new Date().toISOString()}}
+ }if(body.method==='loadDraft'){const {data,error:readError}=await db.from('display_config').select('draft,published').eq('id',1).single();if(readError)return NextResponse.json({error:'Cannot load staging display_config: '+readError.message,code:'DISPLAY_CONFIG_READ_FAILED'},{status:503});return NextResponse.json({draft:normalizeConfig(data?.draft),publishedFlyerCount:normalizeConfig(data?.published).flyers.length},{headers:{'Cache-Control':'no-store'}});}if(body.method==='loadPublishedFlyers'){const {data,error:readError}=await db.from('display_config').select('published').eq('id',1).single();if(readError)throw readError;return NextResponse.json({flyers:normalizeConfig(data?.published).flyers},{headers:{'Cache-Control':'no-store'}});}const config=normalizeConfig(body.config);if(config.prayer){const entries=[...Object.values(config.prayer.prayers).flatMap(t=>[t.start,t.iqamah]),config.prayer.jumuah1,config.prayer.jumuah2];if(entries.some(t=>t&&!validHHMM(t)))return NextResponse.json({error:'Invalid prayer time format'},{status:400});config.prayer={...config.prayer,source:'manual',verifiedAt:new Date().toISOString()}}
  // On Publish, delete files removed from the live slideshow, never on an unsaved draft edit.
  // Only our own top-level flyer assets are eligible; third-party URLs are never touched.
  const ownedPath=(url:string)=>{try{
-  const u=new URL(url);const base=new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!);
+  const u=new URL(url);const base=new URL(process.env.NEXT_PUBLIC_STAGING_SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL!);
   const prefix='/storage/v1/object/public/flyers/';
   if(u.origin!==base.origin||!u.pathname.startsWith(prefix))return null;
   const path=decodeURIComponent(u.pathname.slice(prefix.length));
