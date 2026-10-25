@@ -9,8 +9,8 @@ export async function POST(req:NextRequest){const db=serverDb();const adminEmail
   if(design!=='premium-01'&&design!=='blue-classic')return NextResponse.json({error:'Invalid D04 design'},{status:400});
   const {data:row,error:readError}=await db.from('display_config').select('draft,published').eq('id',1).single();
   if(readError||!row)return NextResponse.json({error:'D04 configuration unavailable'},{status:503});
-  const published={...normalizeConfig(row.published),d04Design:design};
-  const draft={...normalizeConfig(row.draft),d04Design:design};
+  const published={...normalizeConfig(row.published),d04Design:design,d04WhatsAppUrl:normalizeConfig(body.config).d04WhatsAppUrl,d04Ticker:normalizeConfig(body.config).d04Ticker};
+  const draft={...normalizeConfig(row.draft),d04Design:design,d04WhatsAppUrl:published.d04WhatsAppUrl,d04Ticker:published.d04Ticker};
   const {data:saved,error:writeError}=await db.from('display_config').update({published,draft,published_at:new Date().toISOString()}).eq('id',1).select('published').single();
   if(writeError||!saved||normalizeConfig(saved.published).d04Design!==design)return NextResponse.json({error:'Unable to verify D04 design publication'},{status:503});
   return NextResponse.json({ok:true,design,publishedAt:new Date().toISOString()},{headers:{'Cache-Control':'no-store'}});
