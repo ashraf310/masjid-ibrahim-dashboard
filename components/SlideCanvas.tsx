@@ -6,7 +6,7 @@ export default function SlideCanvas({file,page,onPageCount}:{file:File;page:numb
  const [doc,setDoc]=useState<DocumentType|null>(null);
  const [error,setError]=useState('');
  useEffect(()=>{let active=true;let loaded:DocumentType|null=null;setDoc(null);setError('');
- (async()=>{const pdfjs=await import('pdfjs-dist');pdfjs.GlobalWorkerOptions.workerSrc=new URL('pdfjs-dist/build/pdf.worker.min.mjs',import.meta.url).toString();
+ (async()=>{const pdfjs=await import('pdfjs-dist');pdfjs.GlobalWorkerOptions.workerSrc='/pdf.worker.min.mjs';
  const task=pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())});loaded=await task.promise;
  if(!active){await loaded.destroy();return}setDoc(loaded);onPageCount(loaded.numPages);
  })().catch(e=>{if(active)setError(e instanceof Error?e.message:'Unable to read converted PDF')});
