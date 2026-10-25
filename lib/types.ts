@@ -4,7 +4,7 @@ export type PrayerSchedule = {date:string; hijri:string; prayers:Record<PrayerNa
 export type Flyer = {id:string; title:string; url:string; enabled:boolean; duration:number};
 export type Config = {heading:string; subtitle:string; donationUrl:string; ticker:string; urgentEnabled:boolean; urgentText:string; flyers:Flyer[]; prayer:PrayerSchedule|null; d04Design?:string;d04WhatsAppUrl?:string;updatedAt?:string};
 export const DONATE = 'https://payments.madinaapps.com/masjidibrahimtx';
-export const DEFAULT_CONFIG:Config = {heading:'SUSTAIN OUR MASJID',subtitle:'Help Build Our Future',donationUrl:DONATE,ticker:'Community Announcements     •     Advertising & Sponsorship Opportunities Available     •     Support Masjid Ibrahim',urgentEnabled:false,urgentText:'',flyers:[],prayer:null,d04Design:'blue-classic',d04WhatsAppUrl:''};
+export const DEFAULT_CONFIG:Config = {heading:'SUSTAIN OUR MASJID',subtitle:'Help Build Our Future',donationUrl:DONATE,ticker:'Community Announcements     •     Advertising & Sponsorship Opportunities Available     •     Support Masjid Ibrahim',urgentEnabled:false,urgentText:'',flyers:[],prayer:null,d04Design:obj.d04Design==='cream-gold'?'cream-gold':'blue-classic',d04WhatsAppUrl:''};
 export const PRAYERS:PrayerName[] = ['Fajr','Dhuhr','Asr','Maghrib','Isha'];
 export function validHHMM(t:string){return /^([01]?\d|2[0-3]):[0-5]\d$/.test(t)}
 export function normalizeConfig(value:unknown):Config {
