@@ -2,6 +2,7 @@
 import {useEffect,useState} from 'react';
 import {PRAYERS,type Config,type PrayerSchedule} from '../../lib/types';
 import officialLogo from '../../Masjid Ibrahim Logo_official_transp.png';
+import D04Premium from '../../components/D04Premium';
 
 const zone='America/Chicago';
 function day(d:Date){const x=new Intl.DateTimeFormat('en-US',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);const val=(k:string)=>x.find(v=>v.type===k)?.value||'';return val('year')+'-'+val('month')+'-'+val('day')}
@@ -56,6 +57,7 @@ export default function SalahTimings(){
  const qr='https://api.qrserver.com/v1/create-qr-code/?size=270x270&margin=12&data='+encodeURIComponent(whatsapp||'Masjid Ibrahim WhatsApp - DEMO QR only - configure official link in admin');
  
  if(activePrayer)return <main className="d04-silence" aria-label={activePrayer+' Iqamah reminder'}><img src={officialLogo.src} alt="Masjid Ibrahim"/><div className="silence-card"><h2>{activePrayer.toUpperCase()} · IQAMAH</h2><div className="phone-icon">📵</div><h1>Please turn off<br/>your cell phone</h1><p>Silence your device and prepare for prayer.</p><small>The Salah timetable will return shortly.</small></div><style jsx>{`.d04-silence{width:100vw;height:100dvh;background:linear-gradient(145deg,#061831,#154e83);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Arial,sans-serif;text-align:center;padding:4vh}.d04-silence img{width:min(18vw,180px);height:14vh;object-fit:contain}.silence-card{border:2px solid #dcb979;border-radius:22px;background:#0b2a4a;padding:3vh 7vw;max-width:950px}.silence-card h2{color:#e9c57f;font-size:clamp(28px,3vw,56px)}.silence-card h1{font-size:clamp(40px,5vw,90px);margin:1vh 0}.phone-icon{font-size:clamp(50px,7vw,120px)}.silence-card p{font-size:clamp(22px,2.5vw,46px)}.silence-card small{font-size:clamp(15px,1.3vw,26px);color:#cbd9e8}`}</style></main>;
+ if((cfg?.d04Design||'premium-01')==='premium-01')return <D04Premium timeLabel={timeLabel} dateLabel={dateLabel} hijri={prayer?.hijri||''} prayer={prayer} name={next?.name.toUpperCase()||(tomorrowReady?'FAJR':'—')} countdown={countdown} highlight={next?.name|| (tomorrowReady?'Fajr':'')} tick={cfg?.ticker||''}/>;
  return <main className={'d04 '+(cfg?.d04Design==='cream-gold'?'cream-gold':'blue-classic')} aria-label="D04 Salah Timings Dashboard">
  <div className="sky"/>
  <header className="heading"><div className="dateDetails"><div className="clock" aria-label="Current time">{timeLabel}</div><div className="dateRow"><span className="calendarIcon"><CalendarIcon/></span><div className="dateText"><strong>{dateLabel}</strong><small>{prayer?.hijri||'Hijri date pending'}</small></div></div></div></header>
