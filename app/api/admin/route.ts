@@ -4,7 +4,17 @@ import {normalizeConfig,validHHMM} from '../../../lib/types';
 export async function POST(req:NextRequest){const db=serverDb();const adminEmail=process.env.STAGING_ADMIN_EMAIL||process.env.ADMIN_EMAIL;if(!db||!adminEmail)return NextResponse.json({error:'Server admin not configured'},{status:503});
  const bearer=req.headers.get('authorization')||'';if(!bearer.startsWith('Bearer '))return NextResponse.json({error:'Unauthorized'},{status:401});
  const {data:{user},error}=await db.auth.getUser(bearer.slice(7));if(error||!user||user.email?.toLowerCase()!==adminEmail.toLowerCase())return NextResponse.json({error:'Not authorized administrator'},{status:403});
- try{const body=await req.json();if(!['save','publish','loadPublishedFlyers','loadDraft','listUnusedFlyers','deleteUnusedFlyer'].includes(body.method))return NextResponse.json({error:'Unsupported operation'},{status:400});if(body.method==='listUnusedFlyers'||body.method==='deleteUnusedFlyer'){
+ try{const body=await req.json();if(!['save','publish','loadPublishedFlyers','loadDraft','listUnusedFlyers','deleteUnusedFlyer','publishD04'].includes(body.method))return NextResponse.json({error:'Unsupported operation'},{status:400});if(body.method==='publishD04'){
+  const design=body.design;
+  if(design!=='premium-01'&&design!=='blue-classic')return NextResponse.json({error:'Invalid D04 design'},{status:400});
+  const {data:row,error:readError}=await db.from('display_config').select('draft,published').eq('id',1).single();
+  if(readError||!row)return NextResponse.json({error:'D04 configuration unavailable'},{status:503});
+  const published={...normalizeConfig(row.published),d04Design:design};
+  const draft={...normalizeConfig(row.draft),d04Design:design};
+  const {data:saved,error:writeError}=await db.from('display_config').update({published,draft,published_at:new Date().toISOString()}).eq('id',1).select('published').single();
+  if(writeError||!saved||normalizeConfig(saved.published).d04Design!==design)return NextResponse.json({error:'Unable to verify D04 design publication'},{status:503});
+  return NextResponse.json({ok:true,design,publishedAt:new Date().toISOString()},{headers:{'Cache-Control':'no-store'}});
+ }if(body.method==='listUnusedFlyers'||body.method==='deleteUnusedFlyer'){
  const {data:row,error:readError}=await db.from('display_config').select('draft,published').eq('id',1).single();if(readError)throw readError;
  const referenced=new Set([...normalizeConfig(row?.draft).flyers,...normalizeConfig(row?.published).flyers].map(f=>{try{const u=new URL(f.url);const marker='/storage/v1/object/public/flyers/';return u.pathname.includes(marker)?decodeURIComponent(u.pathname.split(marker)[1]):null}catch{return null}}).filter((p):p is string=>Boolean(p)));
  const bucket=db.storage.from('flyers');
