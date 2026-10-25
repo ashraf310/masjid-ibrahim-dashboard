@@ -4,7 +4,7 @@ export const dynamic='force-dynamic';export const runtime='nodejs';
 const headers={'Cache-Control':'no-store'};
 async function auth(req:NextRequest){
  const {db}=stagingDbStatus();if(!db)return null;
- const email=process.env.STAGING_ADMIN_EMAIL?.trim().toLowerCase();
+ const email=(process.env.STAGING_ADMIN_EMAIL||process.env.ADMIN_EMAIL)?.trim().toLowerCase();
  const token=req.headers.get('authorization')?.replace(/^Bearer /,'')||'';
  if(!email||!token)return null;
  const {data,error}=await db.auth.getUser(token);
