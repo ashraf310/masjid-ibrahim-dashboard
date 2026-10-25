@@ -5,7 +5,7 @@ export const runtime='nodejs';export const dynamic='force-dynamic';
 const headers={'Cache-Control':'no-store'};
 export async function POST(req:NextRequest){
  const {db}=stagingDbStatus();if(!db)return NextResponse.json({error:'Staging unavailable'},{status:503,headers});
- const expected=process.env.STAGING_ADMIN_EMAIL?.trim().toLowerCase();
+ const expected=(process.env.STAGING_ADMIN_EMAIL||process.env.ADMIN_EMAIL)?.trim().toLowerCase();
  const jwt=req.headers.get('authorization')?.match(/^Bearer (.+)$/)?.[1]||'';
  if(!expected||!jwt)return NextResponse.json({error:'Unauthorized'},{status:401,headers});
  const {data:{user},error:authError}=await db.auth.getUser(jwt);
