@@ -2,17 +2,20 @@ import 'server-only';
 import {createHash,timingSafeEqual} from 'node:crypto';
 import {createClient} from '@supabase/supabase-js';
 const STAGING_PROJECT_ID='prj_TX0ZefGHlJUidnjfSMYCXIjm6NuZ';
+const PRODUCTION_PROJECT_ID='prj_nfxbmx6pipe5y7bCvS0QmhUL66Cy';
 export function stagingDbStatus(){
  const id=process.env.VERCEL_PROJECT_ID;
  const host=process.env.VERCEL_URL||'';
- const isVercelStaging=id===STAGING_PROJECT_ID||host.startsWith('masjid-ibrahim-staging-');
- // Allow explicit LOCAL development against the same staging Supabase project; never allow a different Vercel project.
- const localStaging=process.env.NODE_ENV==='development'&&!id&&!host&&Boolean(process.env.NEXT_PUBLIC_STAGING_SUPABASE_URL)&&process.env.SUPABASE_URL?.trim()===process.env.NEXT_PUBLIC_STAGING_SUPABASE_URL?.trim();
- if(!isVercelStaging&&!localStaging)return {db:null,reason:'STAGING_PROJECT_CHECK_FAILED'};
- const url=process.env.SUPABASE_URL?.trim();
+ const staging=id===STAGING_PROJECT_ID||host.startsWith('masjid-ibrahim-staging-');
+ const production=id===PRODUCTION_PROJECT_ID||host.startsWith('masjid-ibrahim-dashboard-');
+ const local=process.env.NODE_ENV==='development'&&!id&&!host;
+ if(!staging&&!production&&!local)return {db:null,reason:'PROJECT_CHECK_FAILED'};
+ const url=process.env.SUPABASE_URL?.trim()||(production?process.env.NEXT_PUBLIC_SUPABASE_URL?.trim():undefined);
+ const expectedUrl=production?process.env.NEXT_PUBLIC_SUPABASE_URL?.trim():process.env.NEXT_PUBLIC_STAGING_SUPABASE_URL?.trim();
  const key=process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
  if(!url)return {db:null,reason:'SUPABASE_URL_MISSING'};
  if(!url.startsWith('https://')||!url.endsWith('.supabase.co'))return {db:null,reason:'SUPABASE_URL_INVALID'};
+ if(!expectedUrl||url!==expectedUrl)return {db:null,reason:'SUPABASE_ENVIRONMENT_MISMATCH'};
  if(!key)return {db:null,reason:'SUPABASE_KEY_MISSING'};
  try{return {db:createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}}),reason:null};}
  catch{return {db:null,reason:'SUPABASE_CLIENT_ERROR'};}
