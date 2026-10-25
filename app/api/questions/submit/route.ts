@@ -5,11 +5,15 @@ const headers={'Cache-Control':'no-store','X-Robots-Tag':'noindex,nofollow'};
 export async function GET(){
  const db=stagingDb();
  if(!db)return NextResponse.json({live:false},{headers});
+ const {data:settings}=await db.from('display_config').select('published').eq('id',1).maybeSingle();
+ if(settings?.published?.d02QaEnabled===false)return NextResponse.json({live:false},{headers});
  const {data,error}=await db.from('presentations').select('id').eq('state','live').limit(1).maybeSingle();
  return NextResponse.json({live:!error&&!!data},{headers});
 }
 export async function POST(req:NextRequest){
  const db=stagingDb();if(!db)return NextResponse.json({error:'Q&A unavailable'},{status:503,headers});
+ const {data:settings}=await db.from('display_config').select('published').eq('id',1).maybeSingle();
+ if(settings?.published?.d02QaEnabled===false)return NextResponse.json({error:'Q&A is disabled by the administrator'},{status:403,headers});
  const origin=req.headers.get('origin');if(origin&&origin!==new URL(req.url).origin)return NextResponse.json({error:'Invalid origin'},{status:403,headers});
  let body:unknown;try{body=await req.json()}catch{return NextResponse.json({error:'Invalid question'},{status:400,headers})}
  const question=typeof (body as {question?:unknown})?.question==='string'?(body as {question:string}).question.trim():'';
