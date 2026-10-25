@@ -98,7 +98,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
   finally{setPublishing(false)}
  }
  function documentGlobalCanvas(){return window.document.createElement('canvas')}
- async function start(){try{await liveAction('start');setLiveMode(true);setIndex(0);setPublishMessage('Staging presentation live. Audience sees slides only.')}catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot start')}}
+ async function start(){try{await liveAction('start');setLiveMode(true);setSpeakerMode(true);setIndex(0);setPublishMessage('Staging presentation live. Audience sees slides only.')}catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot start')}}
  async function end(){try{await liveAction('end');setLiveMode(false);setPublishMessage('Presentation ended and cleared.');onEnded()}catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot end')}}
 
  const onPageCount=useCallback((n:number)=>setPageCount(n),[]);
@@ -138,6 +138,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  {!info&&!error&&<p>Reading PowerPoint slide order and notes...</p>}
  {error&&<p role="alert" style={{color:'#ffbbb6'}}>{error}</p>}
  {info&&<><p>{total} PowerPoint slides detected</p>
+ {pdf&&<div aria-hidden="true" style={{position:'absolute',width:1,height:1,overflow:'hidden',opacity:0,pointerEvents:'none'}}><SlideCanvas file={pdf} page={1} onPageCount={onPageCount}/></div>}
  <section style={{padding:20,background:'#091f3b',borderRadius:10,marginBottom:18}}>
  <h3 style={{margin:'0 0 10px'}}>Step 1 — Prepare your slides</h3>
  <p style={{color:'#cbd9e9'}}>Convert your PowerPoint to display-quality slides. This happens on your laptop.</p>
