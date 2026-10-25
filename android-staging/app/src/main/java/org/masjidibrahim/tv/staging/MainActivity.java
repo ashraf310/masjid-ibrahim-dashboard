@@ -30,7 +30,7 @@ public final class MainActivity extends Activity {
  private static final String CONFIG=HOST+"/api/device/config";
  private static final String PAIR=HOST+"/api/device/pair";
  private static final String AUDIENCE=HOST+"/api/audience/current";
- private static final String LIVE=HOST+"/audience-live";
+ private static final String LIVE=HOST+"/audience-live?tv=1";
  private final Handler handler=new Handler(Looper.getMainLooper());
  private final ExecutorService io=Executors.newSingleThreadExecutor();
  private WebView browser;
