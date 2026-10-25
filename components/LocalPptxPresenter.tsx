@@ -73,7 +73,7 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
   try{
    const id=await ensureUploaded();setActiveId(id);
    const pdfjs=await import('pdfjs-dist');
-   pdfjs.GlobalWorkerOptions.workerSrc=new URL('pdfjs-dist/build/pdf.worker.min.mjs',import.meta.url).toString();
+   pdfjs.GlobalWorkerOptions.workerSrc='/pdf.worker.min.mjs';
    const document=await pdfjs.getDocument({data:new Uint8Array(await pdf.arrayBuffer())}).promise;
    try{
     if(document.numPages!==info.slides.length)throw Error('PDF page count does not match PPTX slide count');
