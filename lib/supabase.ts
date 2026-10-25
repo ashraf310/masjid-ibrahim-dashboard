@@ -13,7 +13,7 @@ export function browserDb(){
  return browserClient;
 }
 export function serverDb(){
- const isStaging=process.env.VERCEL_PROJECT_ID==='prj_TX0ZefGHlJUidnjfSMYCXIjm6NuZ'||(process.env.VERCEL_URL||'').startsWith('masjid-ibrahim-staging-');
+ const isStaging=Boolean(process.env.NEXT_PUBLIC_STAGING_SUPABASE_URL)||process.env.VERCEL_PROJECT_ID==='prj_TX0ZefGHlJUidnjfSMYCXIjm6NuZ'||(process.env.VERCEL_URL||'').startsWith('masjid-ibrahim-staging-');
  const url=isStaging?process.env.SUPABASE_URL:process.env.NEXT_PUBLIC_SUPABASE_URL;
  const key=process.env.SUPABASE_SERVICE_ROLE_KEY;
  if(!url||!key)return null;
