@@ -8,7 +8,7 @@ from urllib.parse import urlsplit
 import os, pathlib, shutil, subprocess, sys, tempfile, urllib.parse
 
 PORT=43871
-ALLOWED={'https://masjid-ibrahim-staging.vercel.app'}
+ALLOWED={'https://masjid-ibrahim-staging.vercel.app', 'http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://127.0.0.1:3001'}
 MAX_BYTES=50*1024*1024
 
 def office():
