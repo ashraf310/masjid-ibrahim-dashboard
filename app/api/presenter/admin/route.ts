@@ -7,7 +7,7 @@ const headers={'Cache-Control':'no-store'};
 async function authenticated(req:NextRequest){
  const {db,reason}=stagingDbStatus();
  if(!db)return {db:null,reason:reason||'STAGING_DB_UNAVAILABLE'};
- const expected=process.env.STAGING_ADMIN_EMAIL?.trim().toLowerCase();
+ const expected=(process.env.STAGING_ADMIN_EMAIL||process.env.ADMIN_EMAIL)?.trim().toLowerCase();
  if(!expected)return {db:null,reason:'ADMIN_EMAIL_MISSING'};
  const header=req.headers.get('authorization')||'';
  if(!/^Bearer [^ ]{20,}$/.test(header))return {db:null,reason:'TOKEN_MISSING'};
