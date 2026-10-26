@@ -5,7 +5,7 @@ This file records **verified** build and deployment state. Update it in the same
 ## Release policy (APPROVED by project owner — October 25, 2026)
 - **Local workspace:** edit and run checks locally; not a deployment or source of truth.
 - **Development:** `development/multiscreen-presenter-v1` is current development branch; sync it with `main` before new work.
-- **Staging:** deploy a tested development commit to the separate staging Vercel project and staging Supabase; install staging Android APK for device testing.
+- **Staging:** local-first workflow: commit development changes to GitHub, pull/test locally, and only trigger a staging build/deployment after the owner explicitly requests it. Do not automatically deploy from chat. Install staging Android APK only when a specific build is approved.
 - **Production:** only after owner explicitly approves each specific release; merge through a PR to `main`, build separate production Android APK if Android code changed, deploy production Vercel explicitly, verify, then update this register.
 - **Never** copy production secrets/data to staging or point staging devices at production.
 - Each change should have an ID, summary, affected modules, commit, test result, environment, APK version (if relevant), approval, deployment ID, rollback.
@@ -42,6 +42,8 @@ This file records **verified** build and deployment state. Update it in the same
 | MI-FIX-002 | 2026-10-25 | Reduce Maghrib-only countdown label size and add separator spacing in D04 Premium (`components/D04Premium.tsx`); D01 variant validation pending | `084467e2fa748ed372d3322a86ecb69c6e1f1497` | Local test pending; no staging deployment requested | Not approved / not deployed | Awaiting local validation; no APK build |
 
 | MI-ENH-001 | 2026-10-25 | Integrate TV Management into authenticated Admin as TV MANAGEMENT tab; legacy `/tv-management` redirects to `/admin?tab=tvs`; existing TV controls preserved | `daaceccb`, `6ca4772`, `bf40211` | Local build/UI test pending; no staging deployment authorized | Not approved / not deployed | No Android change; rollback: revert listed commits |
+
+| MI-ENH-002 | 2026-10-25 | D03 live screen sharing prototype: authenticated presenter code, screen selection/Go Live, WebRTC receiver, `/live` D03 > D02 fallback, staging Android TV priority, SQL state migration | `4d03003`, `e7f6eca`, `895a666`, `a559294`, `8812ae3`, `7a106bf`, `a2ef023` | NOT TESTED; run SQL migration on isolated local/staging test database before attempting; requires multi-device/WebRTC security review | NOT APPROVED / NOT DEPLOYED | Staging Android source changed; APK not built. Existing production APK v1.0 unchanged |
 
 ## Template for future entry
 
