@@ -53,6 +53,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-ENH-005 | 2026-10-26 | Simplify presenter route to `/live`, PRISM/TV receiver route to `/public`, redirect old `/live-presenter` to `/live`; staging Android D03 address updated; D02 `/audience-live` unchanged | `b0daca8`, `4acf482`, `12e0adc`, `75ece5a`, `37d54f6`, `a5b1bde` | Local browser route and D03 streaming retest pending | Not approved / not deployed | Staging Android source only, no APK built; production unchanged |
 
+| MI-FIX-004 | 2026-10-26 | D04 full-screen flicker mitigation: retain last confirmed D03 status on transient API errors, require two consistent screen-change polls before staging TV WebView navigation, isolate premium D04 ticker paint | `ca40dede8`, `3190e113` | NOT TESTED locally/physical TV; actual flicker root cause not proven | Not approved / not deployed | Staging Android source requires rebuilt APK; currently installed APK unchanged |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
