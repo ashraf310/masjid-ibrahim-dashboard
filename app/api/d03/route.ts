@@ -38,8 +38,10 @@ export async function POST(req:NextRequest){
  }
  if(!isOwner)return NextResponse.json({error:'Session owner mismatch'},{status:403,headers});
  if(input.action==='heartbeat'){
-  const {error:heartbeatError}=await db.from('d03_live_state').update({heartbeat_at:new Date().toISOString()}).eq('id',1).eq('session_id',input.sessionId);
-  return NextResponse.json({ok:!heartbeatError},{status:heartbeatError?503:200,headers});
+  const {data:updated,error:heartbeatError}=await db.from('d03_live_state').update({heartbeat_at:new Date().toISOString()}).eq('id',1).eq('status','live').eq('session_id',input.sessionId).select('session_id').maybeSingle();
+  if(heartbeatError)return NextResponse.json({error:'Heartbeat failed'},{status:503,headers});
+  if(!updated)return NextResponse.json({error:'Live session was ended by Admin'},{status:409,headers});
+  return NextResponse.json({ok:true},{headers});
  }
  if(input.action==='stop'){
   const {error:stopError}=await db.from('d03_live_state').update({status:'waiting',presenter_id:null,session_id:null,heartbeat_at:null,updated_at:new Date().toISOString()}).eq('id',1).eq('session_id',input.sessionId);
