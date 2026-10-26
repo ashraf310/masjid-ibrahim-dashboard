@@ -67,6 +67,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-UI-002 | 2026-10-26 | Update D03 `/live` title to 'Masjid Ibrahim - Live Presentation' and show 'Welcome, {presenter name}' after access-code authentication; name comes from authenticated presenter label | `b9ae5ade` | Local UI check pending | Not approved / not deployed | No API, database, or APK changes |
 
+| MI-UI-003 | 2026-10-26 | D03 `/live` presenter PIN field: discourage browser password-manager autofill, limit to four digits and retain empty initial state | `365b8794` | Local browser verification pending; password-manager behavior can vary | Not approved / not deployed | No APK changes |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
