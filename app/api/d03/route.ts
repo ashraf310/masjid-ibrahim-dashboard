@@ -17,13 +17,22 @@ export async function POST(req:NextRequest){
  const {data:presenter}=await db.from('presenter_links').select('id').eq('token_hash',tokenDigest(token)).is('revoked_at',null).maybeSingle();
  if(!presenter)return NextResponse.json({error:'Presenter revoked or unauthorized'},{status:403,headers});
  let input:{action?:string;sessionId?:string};try{input=await req.json()}catch{return NextResponse.json({error:'Bad request'},{status:400,headers})}
- const {data:current,error}=await db.from('d03_live_state').select('presenter_id,session_id,status,heartbeat_at,updated_at').eq('id',1).single();
+ const {data:current,error}=await db.from('d03_live_state').select('presenter_id,session_id,status,heartbeat_at').eq('id',1).single();
  if(error||!current)return NextResponse.json({error:'D03 migration required'},{status:503,headers});
  const isOwner=current.presenter_id===presenter.id&&current.session_id===input.sessionId;
  if(input.action==='start'){
   if(current.status==='live'&&fresh(current.heartbeat_at))return NextResponse.json({error:'Another D03 session is already active'},{status:409,headers});
   const sessionId=randomUUID();
-  const {data:claimed,error:saveError}=await db.from('d03_live_state').update({presenter_id:presenter.id,session_id:sessionId,status:'live',heartbeat_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',1).eq('updated_at',current.updated_at||'').select('session_id').maybeSingle();
+  // Atomically claim the slot only if it is idle or its heartbeat has expired.
+  // PostgreSQL rechecks this predicate for concurrent updates, so two presenters
+  // cannot both acquire the same slot. No fragile timestamp equality required.
+  const now=new Date();
+  const staleBefore=new Date(now.getTime()-15000).toISOString();
+  const {data:claimed,error:saveError}=await db.from('d03_live_state')
+   .update({presenter_id:presenter.id,session_id:sessionId,status:'live',heartbeat_at:now.toISOString(),updated_at:now.toISOString()})
+   .eq('id',1)
+   .or(`status.eq.waiting,heartbeat_at.lt.${staleBefore}`)
+   .select('session_id').maybeSingle();
   if(saveError||!claimed)return NextResponse.json({error:'Another presenter claimed this session; retry'},{status:409,headers});
   return NextResponse.json({sessionId},{headers});
  }
