@@ -69,6 +69,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-UI-003 | 2026-10-26 | D03 `/live` presenter PIN field: discourage browser password-manager autofill, limit to four digits and retain empty initial state | `365b8794` | Local browser verification pending; password-manager behavior can vary | Not approved / not deployed | No APK changes |
 
+| MI-UI-004 | 2026-10-26 | Separate Android launcher icons: production manifest references official Masjid Ibrahim white logo on navy vector background; staging retains the platform's default icon and STAGING app label | `fb53ab71`, `da998ba5` | Production Android build/icon on device NOT TESTED; production APK unchanged | Not approved / not deployed | Included only in a FUTURE production APK build from approved code; staging APK unaffected |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
