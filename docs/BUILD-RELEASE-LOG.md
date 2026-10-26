@@ -37,6 +37,8 @@ This file records **verified** build and deployment state. Update it in the same
 | MI-APK-001 | 2026-10-25 | Separate production Android APK v1.0 | Workflow run `40260009498` SUCCESS | N/A | APK uploaded to main, published via `dpl_8b3UBATdf6CsFGiQHQz2Dfee1XXd` | Physical TV pairing and reboot tests pending |
 | MI-WEB-001 | 2026-10-25 | Production Downloads page points to production APK | `f9a06ac6` | Not tested | `dpl_8b3UBATdf6CsFGiQHQz2Dfee1XXd` READY | End-user download/install pending |
 
+| MI-OPS-001 | 2026-10-25 | Synchronize development with approved main baseline | PR #3 / `a3f5dee52ced954b696c8cc4df436f634b692bc7` | Not required — source sync only | None | GitHub compare verified `behind_by=0`; development ready for next change |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
