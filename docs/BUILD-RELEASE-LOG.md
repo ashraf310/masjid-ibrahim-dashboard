@@ -65,6 +65,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-FIX-007 | 2026-10-26 | Make TV04 and TV06 removable/re-registerable, unlock fixed-ID dashboard/activation restrictions, allow deletion of any TV with confirmation; expand staging pairing/APK ID rules | `5fa8ca6d`, `3092bdff`, `cf88434d`, `afc80a09`, `363e5600`, `0c8549b1` | NOT TESTED; existing TV04/TV06 database rows NOT deleted by code commit; delete through admin UI after local pull or staging SQL | NOT DEPLOYED | New staging APK required before reassigned TV04/TV06 can pair; production unchanged |
 
+| MI-UI-002 | 2026-10-26 | Update D03 `/live` title to 'Masjid Ibrahim - Live Presentation' and show 'Welcome, {presenter name}' after access-code authentication; name comes from authenticated presenter label | `b9ae5ade` | Local UI check pending | Not approved / not deployed | No API, database, or APK changes |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
