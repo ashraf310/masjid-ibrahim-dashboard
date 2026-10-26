@@ -13,7 +13,6 @@ export async function POST(req:NextRequest){
  let input:unknown;try{input=await req.json()}catch{return NextResponse.json({error:'Invalid request'},{status:400,headers})}
  const {id,action}=(input||{}) as {id?:unknown;action?:unknown};
  if(typeof id!=='string'||!/^TV(?:0[1-9]|[1-9][0-9])$/.test(id)||!['pair','revoke'].includes(String(action)))return NextResponse.json({error:'Invalid action'},{status:400,headers});
- if(id==='TV04'||id==='TV06')return NextResponse.json({error:'This TV is excluded from presentation pairing'},{status:409,headers});
  const key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!key)return NextResponse.json({error:'Staging not configured'},{status:503,headers});
  if(action==='revoke'){
   const {error}=await db.from('tv_devices').update({device_token_hash:null,pairing_code_hash:null,pairing_code_expires_at:null,enabled:false,paired_at:null,last_seen_at:null,updated_at:new Date().toISOString()}).eq('id',id);
