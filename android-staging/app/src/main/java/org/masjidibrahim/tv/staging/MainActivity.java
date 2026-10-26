@@ -40,7 +40,9 @@ public final class MainActivity extends Activity {
  private String token="", defaultUrl=HOST+"/d04",tvId="";
  private boolean paired=false,followLive=false,presenting=false,running=false,requestInFlight=false,setupVisible=false;
  private long lastConfig=0;
- private String shownUrl="";
+ private String shownUrl="",pendingUrl="";
+ private int pendingPolls=0;
+ private boolean lastD03Live=false;
  private static final class Reply {
   final int status; final JSONObject json;
   Reply(int code,JSONObject json){this.status=code;this.json=json;}
@@ -76,12 +78,18 @@ public final class MainActivity extends Activity {
   }finally{conn.disconnect();}
  }
  private void navigate(String url){
-  if(!url.equals(shownUrl)){shownUrl=url;browser.loadUrl(url);}
+  // Confirm a change twice before replacing the current WebView page. A single
+  // transient status response must not blank the entire dashboard.
+  if(url.equals(shownUrl)){pendingUrl="";pendingPolls=0;return;}
+  if(!url.equals(pendingUrl)){pendingUrl=url;pendingPolls=1;return;}
+  if(++pendingPolls<2)return;
+  pendingUrl="";pendingPolls=0;
+  shownUrl=url;browser.loadUrl(url);
  }
  private void showSetup(String message){
   if(setupVisible)return;
   setupVisible=true;
-  paired=false;followLive=false;presenting=false;tvId="";
+  paired=false;followLive=false;presenting=false;lastD03Live=false;pendingUrl="";pendingPolls=0;tvId="";
   browser.setVisibility(View.GONE);
   LinearLayout panel=new LinearLayout(this);
   panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(45,55,45,35);
@@ -143,6 +151,7 @@ public final class MainActivity extends Activity {
        if(!"D01".equals(dashboard)&&!"D04".equals(dashboard)){showSetup("Assign D01 or D04 to this TV in TV Management.");return;}
        defaultUrl="D01".equals(dashboard)?HOST+"/":HOST+"/d04";
        followLive=c.json.optBoolean("followD02",false);
+       if(!followLive)lastD03Live=false;
        paired=true;lastConfig=System.currentTimeMillis();
       }
      }
@@ -150,7 +159,11 @@ public final class MainActivity extends Activity {
       // Failed checks never switch away from the current screen. Non-participating TVs never enter D02.
       if(!followLive)presenting=false;
       else if(live!=null&&live.status==200&&live.json!=null)presenting="live".equals(live.json.optString("state"));
-      boolean d03Live=followLive&&screenShare!=null&&screenShare.status==200&&screenShare.json!=null&&screenShare.json.optBoolean("live",false);
+      // A failed /api/d03 request is not evidence that the stream stopped.
+      // Retain the last confirmed state until a successful status check.
+      if(screenShare!=null&&screenShare.status==200&&screenShare.json!=null)
+       lastD03Live=screenShare.json.optBoolean("live",false);
+      boolean d03Live=followLive&&lastD03Live;
       navigate(d03Live?D03_LIVE:(presenting?LIVE:defaultUrl));
      }
      handler.postDelayed(poll,1500);
