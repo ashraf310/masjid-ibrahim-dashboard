@@ -49,6 +49,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-FIX-003 | 2026-10-26 | Replace fragile exact updated_at comparison with atomic idle/expired-heartbeat condition for D03 session start (`app/api/d03/route.ts`); no SQL migration required | `4598f85d8abd1d136481a8f9f58a3a0417da48d0` | Local retest pending; concurrent start test pending | Not approved / not deployed | No APK change; rollback: revert `4598f85d` |
 
+| MI-ENH-004 | 2026-10-26 | Admin emergency reset ends D03 and active D02 states; Admin can generate or choose 4-digit reusable presenter PIN, list and revoke codes; D03 heartbeat detects forced reset | `3ffe29e1`, `5fcf2788`, `3de8f5af` | Local validation pending (emergency reset, PIN collisions/revocation, live recovery) | Not approved / not deployed | No APK changes; development only |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
