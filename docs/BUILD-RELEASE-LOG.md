@@ -59,6 +59,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-ENH-006 | 2026-10-26 | Add TV registration in Admin → TV Management, auto assign TV07–TV99, extend API pairing and staging Android TV ID validation; existing TV04/TV06 exclusions retained | `b4d81362`, `3c6ae7cd`, `f83c3e15`, `0e0b0672` | Untested; confirm `tv_devices` database constraints permit new IDs; staging APK rebuild required to pair new TVs | Not approved / not deployed | Production unaffected |
 
+| MI-FIX-005 | 2026-10-26 | Fix incorrect four-digit custom presenter PIN regex; clarify saved presenter list (names/status/dates only; PIN hashes are unrecoverable); move optional D02 presentation-slot cleanup under Advanced troubleshooting | `690f4cdf`, `6d1a328a`, `391635f5` | Local validation pending | Not approved / not deployed | No schema or APK changes |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
