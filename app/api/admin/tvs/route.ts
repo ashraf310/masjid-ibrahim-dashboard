@@ -18,9 +18,21 @@ export async function GET(req:NextRequest){
 }
 export async function POST(req:NextRequest){
  const db=await auth(req);if(!db)return NextResponse.json({error:'Not authorized'},{status:403,headers});
- let input:{id?:string;default_dashboard?:string;follow_d02?:boolean;d05_override?:boolean}={};
+ let input:{action?:string;id?:string;location?:string;default_dashboard?:string;follow_d02?:boolean;d05_override?:boolean}={};
  try{input=await req.json()}catch{return NextResponse.json({error:'Invalid JSON'},{status:400,headers})}
- if(!/^TV0[1-6]$/.test(input.id||''))return NextResponse.json({error:'Invalid TV ID'},{status:400,headers});
+ if(input.action==='add'){
+  const location=typeof input.location==='string'?input.location.trim():'';
+  if(!location||location.length>80)return NextResponse.json({error:'Provide a TV location (1–80 characters)'},{status:400,headers});
+  const {data:existing,error:listError}=await db.from('tv_devices').select('id');
+  if(listError)return NextResponse.json({error:'Unable to allocate TV ID'},{status:503,headers});
+  const used=new Set((existing||[]).map(x=>x.id));
+  let id='';for(let n=7;n<=99;n++){const candidate='TV'+String(n).padStart(2,'0');if(!used.has(candidate)){id=candidate;break}}
+  if(!id)return NextResponse.json({error:'TV capacity reached (TV99)'},{status:409,headers});
+  const {data,error}=await db.from('tv_devices').insert({id,location,default_dashboard:'D04',follow_d02:true,d05_override:false,enabled:false,updated_at:new Date().toISOString()}).select('id,location').single();
+  if(error)return NextResponse.json({error:'Unable to add TV. Check database ID constraints and required defaults.',detail:error.code},{status:503,headers});
+  return NextResponse.json({ok:true,device:data},{status:201,headers});
+ }
+ if(!/^TV(?:0[1-9]|[1-9][0-9])$/.test(input.id||''))return NextResponse.json({error:'Invalid TV ID'},{status:400,headers});
  if(!['D01','D04','CAMERA','UNASSIGNED'].includes(input.default_dashboard||''))return NextResponse.json({error:'Invalid dashboard'},{status:400,headers});
  if(typeof input.follow_d02!=='boolean'||typeof input.d05_override!=='boolean')return NextResponse.json({error:'Invalid options'},{status:400,headers});
  if(input.id==='TV04'&&(input.default_dashboard!=='CAMERA'||input.follow_d02||input.d05_override))return NextResponse.json({error:'TV04 camera feed must remain uninterrupted'},{status:409,headers});
