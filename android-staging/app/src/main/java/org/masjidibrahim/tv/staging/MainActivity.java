@@ -146,7 +146,7 @@ public final class MainActivity extends Activity {
       if(c.status==200&&c.json!=null){
        String dashboard=c.json.optString("defaultDashboard","UNASSIGNED");
        String assigned=c.json.optString("tvId","");
-       if(!assigned.matches("TV0[1235]")||assigned.equals("TV04")||assigned.equals("TV06")){showSetup("Device assignment not permitted.");return;}
+       if(!assigned.matches("TV(?:0[1-9]|[1-9][0-9])")||assigned.equals("TV04")||assigned.equals("TV06")){showSetup("Device assignment not permitted.");return;}
        tvId=assigned;
        if(!"D01".equals(dashboard)&&!"D04".equals(dashboard)){showSetup("Assign D01 or D04 to this TV in TV Management.");return;}
        defaultUrl="D01".equals(dashboard)?HOST+"/":HOST+"/d04";
