@@ -48,7 +48,7 @@ export async function POST(req:NextRequest){
   if(label.length<1||label.length>100)return NextResponse.json({error:'Enter presenter name (1-100 characters)'},{status:400,headers});
   // Optionally accept an admin-chosen reusable PIN; never return or store it in plaintext.
   const chosen=input.code;
-  if(chosen!==undefined&&(typeof chosen!=='string'||!/^\\d{4}$/.test(chosen)))return NextResponse.json({error:'Custom code must be exactly 4 digits'},{status:400,headers});
+  if(chosen!==undefined&&(typeof chosen!=='string'||!/^\d{4}$/.test(chosen)))return NextResponse.json({error:'Custom code must be exactly 4 digits'},{status:400,headers});
   const code=typeof chosen==='string'?chosen:String(randomInt(0,10000)).padStart(4,'0');
   const digest=createHash('sha256').update(code).digest('hex');
   const {data:duplicate,error:checkError}=await db.from('presenter_links').select('id').eq('code_hash',digest).is('revoked_at',null).limit(1);
