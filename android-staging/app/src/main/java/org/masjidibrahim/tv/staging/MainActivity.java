@@ -30,6 +30,8 @@ public final class MainActivity extends Activity {
  private static final String CONFIG=HOST+"/api/device/config";
  private static final String PAIR=HOST+"/api/device/pair";
  private static final String AUDIENCE=HOST+"/api/audience/current";
+ private static final String D03=HOST+"/api/d03";
+ private static final String D03_LIVE=HOST+"/live?tv=1";
  private static final String LIVE=HOST+"/audience-live?tv=1";
  private final Handler handler=new Handler(Looper.getMainLooper());
  private final ExecutorService io=Executors.newSingleThreadExecutor();
@@ -118,14 +120,15 @@ public final class MainActivity extends Activity {
    final boolean refreshConfig=!paired||System.currentTimeMillis()-lastConfig>=15000;
    final String key=token;
    io.execute(()->{
-    Reply config=null,audience=null;
+    Reply config=null,audience=null,d03=null;
     try{
      if(refreshConfig)config=get(CONFIG,key);
+     if(!refreshConfig||config.status==200)d03=get(D03,null);
      if(!refreshConfig||(config.status==200&&config.json!=null)) {
       if((!refreshConfig&&followLive)||(refreshConfig&&config.json.optBoolean("followD02",false)))audience=get(AUDIENCE,null);
      }
     }catch(Exception ignored){/* Keep existing screen on transient network errors. */}
-    final Reply c=config,live=audience;
+    final Reply c=config,live=audience,screenShare=d03;
     handler.post(()->{
      requestInFlight=false;if(!running||!key.equals(token))return;
      if(c!=null){
@@ -147,7 +150,8 @@ public final class MainActivity extends Activity {
       // Failed checks never switch away from the current screen. Non-participating TVs never enter D02.
       if(!followLive)presenting=false;
       else if(live!=null&&live.status==200&&live.json!=null)presenting="live".equals(live.json.optString("state"));
-      navigate(presenting?LIVE:defaultUrl);
+      boolean d03Live=followLive&&screenShare!=null&&screenShare.status==200&&screenShare.json!=null&&screenShare.json.optBoolean("live",false);
+      navigate(d03Live?D03_LIVE:(presenting?LIVE:defaultUrl));
      }
      handler.postDelayed(poll,1500);
     });
