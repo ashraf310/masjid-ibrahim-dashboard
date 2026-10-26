@@ -55,6 +55,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-FIX-004 | 2026-10-26 | D04 full-screen flicker mitigation: retain last confirmed D03 status on transient API errors, require two consistent screen-change polls before staging TV WebView navigation, isolate premium D04 ticker paint | `ca40dede8`, `3190e113` | NOT TESTED locally/physical TV; actual flicker root cause not proven | Not approved / not deployed | Staging Android source requires rebuilt APK; currently installed APK unchanged |
 
+| MI-UI-001 | 2026-10-26 | Increase D04 Premium NEXT IQAMAH countdown font from `clamp(24px,3.2vw,67px)` to `clamp(28px,3.8vw,78px)` to visually match prayer name on large TVs; no other layout changes | `f5209c44` | Awaiting local display validation at target TV size | Not approved / not deployed | No APK source change |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
