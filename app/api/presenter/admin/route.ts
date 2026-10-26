@@ -46,11 +46,27 @@ export async function POST(req:NextRequest){
  if(input.action==='create'){
   const label=typeof input.label==='string'?input.label.trim():'';
   if(label.length<1||label.length>100)return NextResponse.json({error:'Enter presenter name (1-100 characters)'},{status:400,headers});
-  const code=String(randomInt(0,10000)).padStart(4,'0');const hash=createHash('sha256').update(randomBytes(32)).digest('hex');const codeHash=createHash('sha256').update(code).digest('hex');
+  // Optionally accept an admin-chosen reusable PIN; never return or store it in plaintext.
+  const chosen=input.code;
+  if(chosen!==undefined&&(typeof chosen!=='string'||!/^\\d{4}$/.test(chosen)))return NextResponse.json({error:'Custom code must be exactly 4 digits'},{status:400,headers});
+  const code=typeof chosen==='string'?chosen:String(randomInt(0,10000)).padStart(4,'0');
+  const digest=createHash('sha256').update(code).digest('hex');
+  const {data:duplicate,error:checkError}=await db.from('presenter_links').select('id').eq('code_hash',digest).is('revoked_at',null).limit(1);
+  if(checkError)return NextResponse.json({error:'Unable to verify code uniqueness'},{status:503,headers});
+  if(duplicate?.length)return NextResponse.json({error:'Code already assigned. Choose a different one.'},{status:409,headers});
+  const hash=createHash('sha256').update(randomBytes(32)).digest('hex');const codeHash=digest;
   const {data,error}=await db.from('presenter_links').insert({label,token_hash:hash,code_hash:codeHash}).select('id,label,created_at,revoked_at').single();
   if(error){const missingColumn=error.code==='42703'||error.code==='PGRST204'||/code_hash|schema cache|column/i.test(error.message||'');return NextResponse.json({error:missingColumn?'Staging Supabase migration missing: add presenter_links.code_hash using supabase/migrations/20261024_presenter_access_codes.sql.':'PIN creation failed in staging database. Check presenter_links schema and database logs.',code:error.code||'DATABASE_INSERT_FAILED'},{status:503,headers});}
   const base=new URL(req.url).origin;
   return NextResponse.json({presenter:data,link:base+'/presenter',code,notice:'Share the permanent presenter URL and this code privately. The 4-digit code is displayed once.'},{status:201,headers});
+ }
+ if(input.action==='emergency-stop'){
+  // Reset D03 and end any D02 live presentation. Does not delete files or revoke saved codes.
+  const {error:d03Error}=await db.from('d03_live_state').update({status:'waiting',presenter_id:null,session_id:null,heartbeat_at:null,updated_at:new Date().toISOString()}).eq('id',1);
+  if(d03Error)return NextResponse.json({error:'D03 emergency reset failed'},{status:503,headers});
+  const {error:d02Error}=await db.from('presentations').update({state:'ended'}).eq('state','live');
+  if(d02Error)return NextResponse.json({error:'D03 reset succeeded, but D02 reset failed'},{status:503,headers});
+  return NextResponse.json({ok:true,message:'D03 and D02 live session states cleared'},{headers});
  }
  if(input.action==='status'){
   const {data,error}=await db.from('presentations').select('id,title,state,created_at,source_format').limit(1).maybeSingle();
