@@ -47,6 +47,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-ENH-003 | 2026-10-26 | PRISM automation requirements: auto select camera/presentation scene and start stream with D02/D03; D03 priority; auto stop after final session | Requirements: `docs/MI-ENH-003-PRISM-AUTOMATION.md` | Feasibility and local test NOT STARTED | NOT APPROVED / NOT DEPLOYED | Requirements only; code/build unchanged |
 
+| MI-FIX-003 | 2026-10-26 | Replace fragile exact updated_at comparison with atomic idle/expired-heartbeat condition for D03 session start (`app/api/d03/route.ts`); no SQL migration required | `4598f85d8abd1d136481a8f9f58a3a0417da48d0` | Local retest pending; concurrent start test pending | Not approved / not deployed | No APK change; rollback: revert `4598f85d` |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
