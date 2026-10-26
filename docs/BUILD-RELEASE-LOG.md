@@ -61,6 +61,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-FIX-005 | 2026-10-26 | Fix incorrect four-digit custom presenter PIN regex; clarify saved presenter list (names/status/dates only; PIN hashes are unrecoverable); move optional D02 presentation-slot cleanup under Advanced troubleshooting | `690f4cdf`, `6d1a328a`, `391635f5` | Local validation pending | Not approved / not deployed | No schema or APK changes |
 
+| MI-FIX-006 | 2026-10-26 | TV Management: editable location/name on all TVs, Delete TV for newly added TV07+, preserve TV04 camera-only and TV06 unassigned, improve add failure diagnostic; staging SQL migration for legacy TV ID check | `ea95eb79`, `4a073fd1`, `6a8f3a98` | UNTESTED; migration requires explicit run in staging Supabase SQL Editor; do not run on production | Not approved / not deployed | No APK changes this fix; expanded ID support still needs staging APK build |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
