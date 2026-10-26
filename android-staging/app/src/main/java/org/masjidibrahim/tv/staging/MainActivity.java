@@ -31,7 +31,7 @@ public final class MainActivity extends Activity {
  private static final String PAIR=HOST+"/api/device/pair";
  private static final String AUDIENCE=HOST+"/api/audience/current";
  private static final String D03=HOST+"/api/d03";
- private static final String D03_LIVE=HOST+"/live?tv=1";
+ private static final String D03_LIVE=HOST+"/public?tv=1";
  private static final String LIVE=HOST+"/audience-live?tv=1";
  private final Handler handler=new Handler(Looper.getMainLooper());
  private final ExecutorService io=Executors.newSingleThreadExecutor();
