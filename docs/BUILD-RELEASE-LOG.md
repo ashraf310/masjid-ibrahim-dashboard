@@ -2,11 +2,11 @@
 
 This file records **verified** build and deployment state. Update it in the same pull request as each release; never mark a deployment successful until Vercel / GitHub Actions confirms it.
 
-## Release policy (PROPOSED — awaiting owner approval)
+## Release policy (APPROVED by project owner — October 25, 2026)
 - **Local workspace:** edit and run checks locally; not a deployment or source of truth.
 - **Development:** `development/multiscreen-presenter-v1` is current development branch; sync it with `main` before new work.
 - **Staging:** deploy a tested development commit to the separate staging Vercel project and staging Supabase; install staging Android APK for device testing.
-- **Production:** only after owner explicitly approves the specific release; merge through a PR to `main`, build separate production Android APK if Android code changed, deploy production Vercel explicitly, verify, then update this register.
+- **Production:** only after owner explicitly approves each specific release; merge through a PR to `main`, build separate production Android APK if Android code changed, deploy production Vercel explicitly, verify, then update this register.
 - **Never** copy production secrets/data to staging or point staging devices at production.
 - Each change should have an ID, summary, affected modules, commit, test result, environment, APK version (if relevant), approval, deployment ID, rollback.
 - A code commit is **not** evidence of a deployment. A READY deploy is **not** proof of full end-to-end device testing.
