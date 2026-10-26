@@ -57,6 +57,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-UI-001 | 2026-10-26 | Increase D04 Premium NEXT IQAMAH countdown font from `clamp(24px,3.2vw,67px)` to `clamp(28px,3.8vw,78px)` to visually match prayer name on large TVs; no other layout changes | `f5209c44` | Awaiting local display validation at target TV size | Not approved / not deployed | No APK source change |
 
+| MI-ENH-006 | 2026-10-26 | Add TV registration in Admin → TV Management, auto assign TV07–TV99, extend API pairing and staging Android TV ID validation; existing TV04/TV06 exclusions retained | `b4d81362`, `3c6ae7cd`, `f83c3e15`, `0e0b0672` | Untested; confirm `tv_devices` database constraints permit new IDs; staging APK rebuild required to pair new TVs | Not approved / not deployed | Production unaffected |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
