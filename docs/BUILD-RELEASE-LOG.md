@@ -39,6 +39,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-OPS-001 | 2026-10-25 | Synchronize development with approved main baseline | PR #3 / `a3f5dee52ced954b696c8cc4df436f634b692bc7` | Not required — source sync only | None | GitHub compare verified `behind_by=0`; development ready for next change |
 
+| MI-FIX-002 | 2026-10-25 | Reduce Maghrib-only countdown label size and add separator spacing in D04 Premium (`components/D04Premium.tsx`); D01 variant validation pending | `084467e2fa748ed372d3322a86ecb69c6e1f1497` | Local test pending; no staging deployment requested | Not approved / not deployed | Awaiting local validation; no APK build |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
