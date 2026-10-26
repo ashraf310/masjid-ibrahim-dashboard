@@ -94,7 +94,7 @@ public final class MainActivity extends Activity {
   LinearLayout panel=new LinearLayout(this);
   panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(45,55,45,35);
   TextView title=new TextView(this);title.setText("Masjid Ibrahim · STAGING TV Pairing");title.setTextSize(23);panel.addView(title);
-  TextView description=new TextView(this);description.setText(message+"\n\nGenerate a 6-digit code in /tv-management for TV01, TV02, TV03 or TV05, then enter it here.");description.setTextSize(16);panel.addView(description);
+  TextView description=new TextView(this);description.setText(message+"\n\nGenerate a 6-digit code in /tv-management for the selected TV, then enter it here.");description.setTextSize(16);panel.addView(description);
   EditText entry=new EditText(this);entry.setSingleLine(true);entry.setHint("6-digit pairing code");entry.setInputType(InputType.TYPE_CLASS_NUMBER);panel.addView(entry);
   AlertDialog dialog=new AlertDialog.Builder(this).setView(panel).setCancelable(false)
    .setPositiveButton("Pair TV",null).create();
@@ -146,7 +146,7 @@ public final class MainActivity extends Activity {
       if(c.status==200&&c.json!=null){
        String dashboard=c.json.optString("defaultDashboard","UNASSIGNED");
        String assigned=c.json.optString("tvId","");
-       if(!assigned.matches("TV(?:0[1-9]|[1-9][0-9])")||assigned.equals("TV04")||assigned.equals("TV06")){showSetup("Device assignment not permitted.");return;}
+       if(!assigned.matches("TV(?:0[1-9]|[1-9][0-9])")){showSetup("Device assignment not permitted.");return;}
        tvId=assigned;
        if(!"D01".equals(dashboard)&&!"D04".equals(dashboard)){showSetup("Assign D01 or D04 to this TV in TV Management.");return;}
        defaultUrl="D01".equals(dashboard)?HOST+"/":HOST+"/d04";
