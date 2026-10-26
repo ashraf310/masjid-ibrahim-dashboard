@@ -63,6 +63,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-FIX-006 | 2026-10-26 | TV Management: editable location/name on all TVs, Delete TV for newly added TV07+, preserve TV04 camera-only and TV06 unassigned, improve add failure diagnostic; staging SQL migration for legacy TV ID check | `ea95eb79`, `4a073fd1`, `6a8f3a98` | UNTESTED; migration requires explicit run in staging Supabase SQL Editor; do not run on production | Not approved / not deployed | No APK changes this fix; expanded ID support still needs staging APK build |
 
+| MI-FIX-007 | 2026-10-26 | Make TV04 and TV06 removable/re-registerable, unlock fixed-ID dashboard/activation restrictions, allow deletion of any TV with confirmation; expand staging pairing/APK ID rules | `5fa8ca6d`, `3092bdff`, `cf88434d`, `afc80a09`, `363e5600`, `0c8549b1` | NOT TESTED; existing TV04/TV06 database rows NOT deleted by code commit; delete through admin UI after local pull or staging SQL | NOT DEPLOYED | New staging APK required before reassigned TV04/TV06 can pair; production unchanged |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
