@@ -41,6 +41,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-FIX-002 | 2026-10-25 | Reduce Maghrib-only countdown label size and add separator spacing in D04 Premium (`components/D04Premium.tsx`); D01 variant validation pending | `084467e2fa748ed372d3322a86ecb69c6e1f1497` | Local test pending; no staging deployment requested | Not approved / not deployed | Awaiting local validation; no APK build |
 
+| MI-ENH-001 | 2026-10-25 | Integrate TV Management into authenticated Admin as TV MANAGEMENT tab; legacy `/tv-management` redirects to `/admin?tab=tvs`; existing TV controls preserved | `daaceccb`, `6ca4772`, `bf40211` | Local build/UI test pending; no staging deployment authorized | Not approved / not deployed | No Android change; rollback: revert listed commits |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
