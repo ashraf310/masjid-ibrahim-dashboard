@@ -17,7 +17,7 @@ export async function POST(req:NextRequest){
  const {data:presenter}=await db.from('presenter_links').select('id').eq('token_hash',tokenDigest(token)).is('revoked_at',null).maybeSingle();
  if(!presenter)return NextResponse.json({error:'Presenter revoked or unauthorized'},{status:403,headers});
  let input:{action?:string;sessionId?:string};try{input=await req.json()}catch{return NextResponse.json({error:'Bad request'},{status:400,headers})}
- const {data:current,error}=await db.from('d03_live_state').select('presenter_id,session_id,status,heartbeat_at').eq('id',1).single();
+ const {data:current,error}=await db.from('d03_live_state').select('presenter_id,session_id,status,heartbeat_at,updated_at').eq('id',1).single();
  if(error||!current)return NextResponse.json({error:'D03 migration required'},{status:503,headers});
  const isOwner=current.presenter_id===presenter.id&&current.session_id===input.sessionId;
  if(input.action==='start'){
