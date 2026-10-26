@@ -12,7 +12,7 @@ export async function POST(req:NextRequest){
  if(authError||user?.email?.toLowerCase()!==expected)return NextResponse.json({error:'Unauthorized'},{status:403,headers});
  let input:unknown;try{input=await req.json()}catch{return NextResponse.json({error:'Invalid request'},{status:400,headers})}
  const {id,action}=(input||{}) as {id?:unknown;action?:unknown};
- if(typeof id!=='string'||!/^TV0[1-6]$/.test(id)||!['pair','revoke'].includes(String(action)))return NextResponse.json({error:'Invalid action'},{status:400,headers});
+ if(typeof id!=='string'||!/^TV(?:0[1-9]|[1-9][0-9])$/.test(id)||!['pair','revoke'].includes(String(action)))return NextResponse.json({error:'Invalid action'},{status:400,headers});
  if(id==='TV04'||id==='TV06')return NextResponse.json({error:'This TV is excluded from presentation pairing'},{status:409,headers});
  const key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!key)return NextResponse.json({error:'Staging not configured'},{status:503,headers});
  if(action==='revoke'){
