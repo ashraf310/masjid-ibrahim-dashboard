@@ -45,6 +45,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-ENH-002 | 2026-10-25 | D03 live screen sharing prototype: authenticated presenter code, screen selection/Go Live, WebRTC receiver, `/live` D03 > D02 fallback, staging Android TV priority, SQL state migration | `4d03003`, `e7f6eca`, `895a666`, `a559294`, `8812ae3`, `7a106bf`, `a2ef023` | NOT TESTED; run SQL migration on isolated local/staging test database before attempting; requires multi-device/WebRTC security review | NOT APPROVED / NOT DEPLOYED | Staging Android source changed; APK not built. Existing production APK v1.0 unchanged |
 
+| MI-ENH-003 | 2026-10-26 | PRISM automation requirements: auto select camera/presentation scene and start stream with D02/D03; D03 priority; auto stop after final session | Requirements: `docs/MI-ENH-003-PRISM-AUTOMATION.md` | Feasibility and local test NOT STARTED | NOT APPROVED / NOT DEPLOYED | Requirements only; code/build unchanged |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
