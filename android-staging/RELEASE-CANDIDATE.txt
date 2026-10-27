@@ -1,0 +1,5 @@
+Masjid Ibrahim staging TV release candidate
+Date: 2026-10-26
+Purpose: Trigger existing staging-only GitHub Actions APK workflow with current development Android source.
+Scope: MI-FIX-002, MI-UI-001, MI-FIX-004, MI-ENH-001, MI-ENH-006, MI-FIX-006, MI-FIX-007, MI-ENH-002, MI-FIX-003, MI-ENH-004, MI-FIX-005, MI-ENH-005, MI-UI-002, MI-UI-003.
+No production APK or deployment is requested by this file.

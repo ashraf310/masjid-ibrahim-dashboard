@@ -1,1 +1,1 @@
-export {default} from '../audience-live/page';
+export {default} from '../../components/LivePresenterView';

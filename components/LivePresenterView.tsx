@@ -1,0 +1,34 @@
+'use client';
+import {useEffect,useRef,useState} from 'react';
+import {browserDb} from '../lib/supabase';
+import type {RealtimeChannel} from '@supabase/supabase-js';
+type Signal={kind:string;viewer?:string;sdp?:RTCSessionDescriptionInit;candidate?:RTCIceCandidateInit;sessionId?:string};
+export default function LivePresenter(){
+ const [code,setCode]=useState(''),[presenterName,setPresenterName]=useState(''),[token,setToken]=useState(''),[status,setStatus]=useState('Enter your reusable presenter code.'),[preview,setPreview]=useState(false),[live,setLive]=useState(false);
+ const video=useRef<HTMLVideoElement>(null),stream=useRef<MediaStream|null>(null),room=useRef<RealtimeChannel|null>(null),peers=useRef<Map<string,RTCPeerConnection>>(new Map()),session=useRef(''),heartbeat=useRef<ReturnType<typeof setInterval>|null>(null),authorized=useRef('');
+ async function control(action:string,sessionId?:string){const res=await fetch('/api/d03',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+authorized.current},body:JSON.stringify({action,sessionId})});const body=await res.json();if(!res.ok)throw Error(body.error||'Session error');return body;}
+ async function login(e:React.FormEvent){e.preventDefault();try{const res=await fetch('/api/presenter/code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});const data=await res.json();if(!res.ok)throw Error(data.error||'Invalid code');authorized.current=data.token;setPresenterName(typeof data.presenter?.label==='string'?data.presenter.label:'Presenter');setToken(data.token);setCode('');setStatus('Access verified. Select a screen, window, or tab.')}catch(e){setStatus(String(e))}}
+ async function choose(){try{if(!navigator.mediaDevices?.getDisplayMedia)throw Error('Screen sharing requires HTTPS or localhost and a supported browser.');const s=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:15},audio:false});stream.current=s;if(video.current)video.current.srcObject=s;s.getVideoTracks()[0].addEventListener('ended',()=>{void stop()},{once:true});setPreview(true);setStatus('Preview ready. Click Go Live to broadcast.')}catch(e){setStatus(String(e))}}
+ async function goLive(){const db=browserDb();if(!db||!stream.current){setStatus('Select a screen first and configure staging Supabase.');return}try{
+  const {sessionId}=await control('start');session.current=sessionId;
+  const channel=db.channel('d03-signal-'+sessionId,{config:{broadcast:{self:false}}});room.current=channel;
+  channel.on('broadcast',{event:'signal'},async ({payload}:{payload:Signal})=>{
+   if(payload.kind==='join'&&payload.viewer){const id=payload.viewer;if(peers.current.has(id))return;
+    const peer=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});peers.current.set(id,peer);
+    stream.current?.getTracks().forEach(track=>peer.addTrack(track,stream.current!));
+    peer.onicecandidate=e=>{if(e.candidate)void channel.send({type:'broadcast',event:'signal',payload:{kind:'ice',viewer:id,candidate:e.candidate.toJSON(),from:'presenter'}})};
+    peer.onconnectionstatechange=()=>{if(['failed','closed','disconnected'].includes(peer.connectionState)){peer.close();peers.current.delete(id)}};
+    const offer=await peer.createOffer();await peer.setLocalDescription(offer);
+    void channel.send({type:'broadcast',event:'signal',payload:{kind:'offer',viewer:id,sdp:peer.localDescription,from:'presenter'}});
+   }
+   if(payload.kind==='answer'&&payload.viewer){const peer=peers.current.get(payload.viewer);if(peer&&payload.sdp&&peer.signalingState==='have-local-offer')await peer.setRemoteDescription(payload.sdp)}
+   if(payload.kind==='ice'&&payload.viewer&&payload.candidate&&payload.sessionId!=='presenter'){const peer=peers.current.get(payload.viewer);if(peer&&peer.remoteDescription)await peer.addIceCandidate(payload.candidate).catch(()=>{})}
+  });
+  await new Promise<void>((resolve,reject)=>channel.subscribe(s=>{if(s==='SUBSCRIBED')resolve();if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')reject(Error('Realtime unavailable'))}));
+  heartbeat.current=setInterval(()=>void control('heartbeat',session.current).catch(()=>void stop()),5000);
+  setLive(true);setStatus('LIVE — hall TVs and PRISM receivers can now connect.');
+ }catch(e){setStatus(String(e));if(session.current)await control('stop',session.current).catch(()=>{});session.current=''}}
+ async function stop(){if(heartbeat.current)clearInterval(heartbeat.current);heartbeat.current=null;const id=session.current;session.current='';if(id)await control('stop',id).catch(()=>{});peers.current.forEach(p=>p.close());peers.current.clear();if(room.current){void browserDb()?.removeChannel(room.current);room.current=null}stream.current?.getTracks().forEach(t=>t.stop());stream.current=null;if(video.current)video.current.srcObject=null;setPreview(false);setLive(false);setStatus('Stream ended.')}
+ useEffect(()=>()=>{if(heartbeat.current)clearInterval(heartbeat.current);stream.current?.getTracks().forEach(t=>t.stop());peers.current.forEach(p=>p.close());if(room.current)void browserDb()?.removeChannel(room.current)},[]);
+ return <main style={{fontFamily:'Arial',minHeight:'100vh',padding:'5vw',background:'#081e38',color:'white'}}><section style={{maxWidth:900,margin:'auto'}}><h1>Masjid Ibrahim - Live Presentation</h1>{token&&<h2 style={{fontSize:'clamp(20px,2.5vw,32px)',fontWeight:500,margin:'8px 0 16px'}}>Welcome, {presenterName}</h2>}<p role="status">{status}</p>{!token?<form onSubmit={e=>void login(e)}><input aria-label="Presenter code" name="live-presenter-access-pin" autoComplete="new-password" autoCapitalize="off" spellCheck={false} placeholder="4-digit presenter code" type="password" inputMode="numeric" maxLength={4} required pattern="[0-9]{4}" value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,'').slice(0,4))}/><button>Unlock</button></form>:<><p>Share only the PowerPoint slideshow window or desired browser tab. No audio is sent.</p><button disabled={live} onClick={()=>void choose()}>Select screen / window / tab</button><video ref={video} muted playsInline autoPlay style={{width:'100%',maxHeight:'55vh',marginTop:20,background:'#000',objectFit:'contain'}}/><p><button className="go-live-button" disabled={!preview||live} onClick={()=>void goLive()}>Go Live</button><button className="end-live-button" disabled={!preview} onClick={()=>void stop()}>End Live Session</button></p></>}</section><style jsx>{`button{padding:12px 20px;margin:6px;background:#dbb776;border:0;border-radius:7px;cursor:pointer}button:disabled{opacity:.45}button.go-live-button{background:#15803d;color:#fff;font-weight:700}button.end-live-button{background:#b91c1c;color:#fff;font-weight:700}input{padding:12px}`}</style></main>
+}

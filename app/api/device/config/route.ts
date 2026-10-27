@@ -10,7 +10,7 @@ export async function GET(req:NextRequest){
  if(!token)return NextResponse.json({error:'Device pairing required'},{status:401,headers});
  const {data,error}=await db.from('tv_devices').select('id,default_dashboard,follow_d02,d05_override,enabled').eq('device_token_hash',tokenDigest(token)).eq('enabled',true).maybeSingle();
  if(error)return NextResponse.json({error:'TV configuration unavailable'},{status:503,headers});
- if(!data||['TV04','TV06'].includes(data.id))return NextResponse.json({error:'Device not authorized'},{status:403,headers});
+ if(!data)return NextResponse.json({error:'Device not authorized'},{status:403,headers});
  await db.from('tv_devices').update({last_seen_at:new Date().toISOString()}).eq('id',data.id);
  // D02 selection is advisory until the Android staging APK uses this endpoint.
  return NextResponse.json({tvId:data.id,defaultDashboard:data.default_dashboard,followD02:data.follow_d02,d05Override:data.d05_override},{headers});
