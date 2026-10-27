@@ -13,19 +13,19 @@ insert into public.d03_live_state(id,status) values (1,'waiting')
  on conflict (id) do nothing;
 alter table public.d03_live_state enable row level security;
 revoke all on public.d03_live_state from anon,authenticated;
--- Do not drop unknown CHECK constraints. Remove ONLY known original TV-ID whitelist.
+-- Only the original named TV ID constraint is eligible for replacement.
+-- Review the preflight output before executing this transaction.
 do $$
-declare id_rule record;
+declare def text;
 begin
- for id_rule in
-  select conname from pg_constraint
-  where conrelid='public.tv_devices'::regclass and contype='c'
-    and pg_get_constraintdef(oid) like '%TV0[1-6]%'
- loop
-   -- Original whitelist restriction must be reviewed against read-only preflight output.
-   -- This migration deliberately aborts so it cannot silently drop unrelated constraints.
-   raise exception 'Manual review required before replacing existing constraint: %', id_rule.conname;
- end loop;
+ select pg_get_constraintdef(oid) into def from pg_constraint
+ where conrelid='public.tv_devices'::regclass and conname='tv_devices_id_check';
+ if def is not null and def not like '%TV0[1-6]%' then
+  raise exception 'Unexpected tv_devices_id_check definition: %',def;
+ end if;
+ if def is not null then
+  execute 'alter table public.tv_devices drop constraint tv_devices_id_check';
+ end if;
 end $$;
 alter table public.tv_devices drop constraint if exists tv_devices_id_expanded_check;
 alter table public.tv_devices add constraint tv_devices_id_expanded_check
