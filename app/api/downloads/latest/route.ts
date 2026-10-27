@@ -24,7 +24,7 @@ async function resolve(req:NextRequest,head=false){
   const file=await response.json() as {type?:string;name?:string;download_url?:string|null;size?:number};
   if(file.type!=='file'||file.name!==filename||!file.download_url||!file.download_url.startsWith('https://raw.githubusercontent.com/'+repository+'/'))return NextResponse.json({error:'GitHub returned an unexpected APK reference'},{status:502,headers:{'Cache-Control':'no-store'}});
   if(head)return new NextResponse(null,{status:200,headers:{'Cache-Control':'no-store','X-APK-Source':'github-main-or-development','X-APK-Size':String(file.size||0)}});
-  return NextResponse.redirect(file.download_url,307,{headers:{'Cache-Control':'no-store, no-cache, max-age=0','Pragma':'no-cache'}});
+  return NextResponse.redirect(file.download_url,{status:307,headers:{'Cache-Control':'no-store, no-cache, max-age=0','Pragma':'no-cache'}});
  }catch{return NextResponse.json({error:'GitHub APK lookup unavailable'},{status:503,headers:{'Cache-Control':'no-store'}})}
 }
 export async function GET(req:NextRequest){return resolve(req);}
