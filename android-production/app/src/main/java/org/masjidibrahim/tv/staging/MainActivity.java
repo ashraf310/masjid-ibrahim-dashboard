@@ -30,6 +30,8 @@ public final class MainActivity extends Activity {
  private static final String CONFIG=HOST+"/api/device/config";
  private static final String PAIR=HOST+"/api/device/pair";
  private static final String AUDIENCE=HOST+"/api/audience/current";
+ private static final String D03=HOST+"/api/d03";
+ private static final String D03_LIVE=HOST+"/public?tv=1";
  private static final String LIVE=HOST+"/audience-live?tv=1";
  private final Handler handler=new Handler(Looper.getMainLooper());
  private final ExecutorService io=Executors.newSingleThreadExecutor();
@@ -38,7 +40,9 @@ public final class MainActivity extends Activity {
  private String token="", defaultUrl=HOST+"/d04",tvId="";
  private boolean paired=false,followLive=false,presenting=false,running=false,requestInFlight=false,setupVisible=false;
  private long lastConfig=0;
- private String shownUrl="";
+ private String shownUrl="",pendingUrl="";
+ private int pendingPolls=0;
+ private boolean lastD03Live=false;
  private static final class Reply {
   final int status; final JSONObject json;
   Reply(int code,JSONObject json){this.status=code;this.json=json;}
@@ -74,17 +78,23 @@ public final class MainActivity extends Activity {
   }finally{conn.disconnect();}
  }
  private void navigate(String url){
-  if(!url.equals(shownUrl)){shownUrl=url;browser.loadUrl(url);}
+  // Confirm a change twice before replacing the current WebView page. A single
+  // transient status response must not blank the entire dashboard.
+  if(url.equals(shownUrl)){pendingUrl="";pendingPolls=0;return;}
+  if(!url.equals(pendingUrl)){pendingUrl=url;pendingPolls=1;return;}
+  if(++pendingPolls<2)return;
+  pendingUrl="";pendingPolls=0;
+  shownUrl=url;browser.loadUrl(url);
  }
  private void showSetup(String message){
   if(setupVisible)return;
   setupVisible=true;
-  paired=false;followLive=false;presenting=false;tvId="";
+  paired=false;followLive=false;presenting=false;lastD03Live=false;pendingUrl="";pendingPolls=0;tvId="";
   browser.setVisibility(View.GONE);
   LinearLayout panel=new LinearLayout(this);
   panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(45,55,45,35);
-  TextView title=new TextView(this);title.setText("Masjid Ibrahim · STAGING TV Pairing");title.setTextSize(23);panel.addView(title);
-  TextView description=new TextView(this);description.setText(message+"\n\nGenerate a 6-digit code in /tv-management for TV01, TV02, TV03 or TV05, then enter it here.");description.setTextSize(16);panel.addView(description);
+  TextView title=new TextView(this);title.setText("Masjid Ibrahim · Production TV Pairing");title.setTextSize(23);panel.addView(title);
+  TextView description=new TextView(this);description.setText(message+"\n\nGenerate a 6-digit code in /tv-management for the selected TV, then enter it here.");description.setTextSize(16);panel.addView(description);
   EditText entry=new EditText(this);entry.setSingleLine(true);entry.setHint("6-digit pairing code");entry.setInputType(InputType.TYPE_CLASS_NUMBER);panel.addView(entry);
   AlertDialog dialog=new AlertDialog.Builder(this).setView(panel).setCancelable(false)
    .setPositiveButton("Pair TV",null).create();
@@ -99,7 +109,7 @@ public final class MainActivity extends Activity {
      if(outcome==null){entry.setError("Connection failed. Try again.");dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);return;}
      String received=outcome.json==null?"":outcome.json.optString("deviceToken","");
      if(outcome.status!=200||!received.matches("[A-Za-z0-9_-]{32,128}")){
-      entry.setError(outcome.status==401?"Code expired or already used. Generate a new code.":"Unable to pair. Check staging database setup.");
+      entry.setError(outcome.status==401?"Code expired or already used. Generate a new code.":"Unable to pair. Check production database setup.");
       dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);return;
      }
      token=received;prefs.edit().putString("pairing_token",token).apply();
@@ -113,19 +123,20 @@ public final class MainActivity extends Activity {
  private final Runnable poll=new Runnable(){
   @Override public void run(){
    if(!running||requestInFlight)return;
-   if(token.isEmpty()){showSetup("This staging TV is not paired.");return;}
+   if(token.isEmpty()){showSetup("This production TV is not paired.");return;}
    requestInFlight=true;
    final boolean refreshConfig=!paired||System.currentTimeMillis()-lastConfig>=15000;
    final String key=token;
    io.execute(()->{
-    Reply config=null,audience=null;
+    Reply config=null,audience=null,d03=null;
     try{
      if(refreshConfig)config=get(CONFIG,key);
+     if(!refreshConfig||config.status==200)d03=get(D03,null);
      if(!refreshConfig||(config.status==200&&config.json!=null)) {
       if((!refreshConfig&&followLive)||(refreshConfig&&config.json.optBoolean("followD02",false)))audience=get(AUDIENCE,null);
      }
     }catch(Exception ignored){/* Keep existing screen on transient network errors. */}
-    final Reply c=config,live=audience;
+    final Reply c=config,live=audience,screenShare=d03;
     handler.post(()->{
      requestInFlight=false;if(!running||!key.equals(token))return;
      if(c!=null){
@@ -135,11 +146,12 @@ public final class MainActivity extends Activity {
       if(c.status==200&&c.json!=null){
        String dashboard=c.json.optString("defaultDashboard","UNASSIGNED");
        String assigned=c.json.optString("tvId","");
-       if(!assigned.matches("TV0[1235]")||assigned.equals("TV04")||assigned.equals("TV06")){showSetup("Device assignment not permitted.");return;}
+       if(!assigned.matches("TV(?:0[1-9]|[1-9][0-9])")){showSetup("Device assignment not permitted.");return;}
        tvId=assigned;
        if(!"D01".equals(dashboard)&&!"D04".equals(dashboard)){showSetup("Assign D01 or D04 to this TV in TV Management.");return;}
        defaultUrl="D01".equals(dashboard)?HOST+"/":HOST+"/d04";
        followLive=c.json.optBoolean("followD02",false);
+       if(!followLive)lastD03Live=false;
        paired=true;lastConfig=System.currentTimeMillis();
       }
      }
@@ -147,7 +159,12 @@ public final class MainActivity extends Activity {
       // Failed checks never switch away from the current screen. Non-participating TVs never enter D02.
       if(!followLive)presenting=false;
       else if(live!=null&&live.status==200&&live.json!=null)presenting="live".equals(live.json.optString("state"));
-      navigate(presenting?LIVE:defaultUrl);
+      // A failed /api/d03 request is not evidence that the stream stopped.
+      // Retain the last confirmed state until a successful status check.
+      if(screenShare!=null&&screenShare.status==200&&screenShare.json!=null)
+       lastD03Live=screenShare.json.optBoolean("live",false);
+      boolean d03Live=followLive&&lastD03Live;
+      navigate(d03Live?D03_LIVE:(presenting?LIVE:defaultUrl));
      }
      handler.postDelayed(poll,1500);
     });
@@ -156,7 +173,7 @@ public final class MainActivity extends Activity {
  };
  @Override public void onCreate(Bundle saved){
   super.onCreate(saved);getWindow().getDecorView().setSystemUiVisibility(5894|1024|512);
-  prefs=getSharedPreferences("staging_pairing",MODE_PRIVATE);token=prefs.getString("pairing_token","");
+  prefs=getSharedPreferences("production_pairing",MODE_PRIVATE);token=prefs.getString("pairing_token","");
   browser=new WebView(this);browser.setBackgroundColor(0xff071a37);
   browser.setWebViewClient(new WebViewClient(){
    @Override public boolean shouldOverrideUrlLoading(WebView view,String url){return !url.startsWith(HOST+"/");}
