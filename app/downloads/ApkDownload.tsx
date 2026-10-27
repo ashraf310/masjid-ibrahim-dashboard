@@ -3,7 +3,7 @@ import {useEffect,useState} from 'react';
 export default function ApkDownload({production=false}:{production?:boolean}){
  const [state,setState]=useState<'checking'|'ready'|'missing'>('checking');
  const apkName=production?'masjid-ibrahim-tv-production.apk':'masjid-ibrahim-tv-staging.apk';
- const url='/downloads/'+apkName;
+ const url='/api/downloads/latest?channel='+(production?'production':'staging');
  useEffect(()=>{
   let active=true;
   fetch(url,{method:'HEAD',cache:'no-store'}).then(r=>{if(active)setState(r.ok?'ready':'missing')}).catch(()=>{if(active)setState('missing')});
@@ -15,7 +15,7 @@ export default function ApkDownload({production=false}:{production?:boolean}){
    <div><h2 style={{fontSize:26,margin:'0 0 8px'}}>Masjid Ibrahim TV — {production?'Production':'Staging'}</h2><p style={{color:'#d0dfec',margin:0}}>Android TV APK · {production?'production build':'staging build'}</p></div>
    <span style={{padding:'9px 14px',borderRadius:25,background:available?'#164f41':'#3a3944',color:available?'#c4f5db':'#f3dbab',fontWeight:700,fontSize:14}}>{state==='checking'?'Checking APK…':available?'APK available':'APK not found'}</span>
   </div>
-  <p style={{lineHeight:1.6,color:'#ccdae7'}}>{production?'Production Masjid Ibrahim Android TV app.':'Staging Android TV app for testing the latest dashboard and presentation changes.'} Auto-launch after full TV reboot is available for testing; support varies by TV model.</p>
-  {available?<a href={url} download style={{display:'inline-block',background:'#e2bd77',color:'#0a213c',textDecoration:'none',padding:'15px 22px',borderRadius:8,fontWeight:800,marginTop:12}}>Download Android TV APK</a>:state==='missing'?<div style={{padding:17,background:'#213d59',borderRadius:9,border:'1px solid #596776',color:'#f2dfbe',lineHeight:1.5}}>The APK was not found at the expected public address. Check that the file is named <code>{apkName}</code> under <code>public/downloads</code> in the appropriate release branch.</div>:null}
+  <p style={{lineHeight:1.6,color:'#ccdae7'}}>{production?'Production Masjid Ibrahim Android TV app.':'Staging Android TV app for testing the latest dashboard and presentation changes.'} The download points to the latest APK uploaded to the corresponding GitHub branch without requiring another Vercel deployment. Auto-launch after full TV reboot depends on TV model.</p>
+  {available?<a href={url} download style={{display:'inline-block',background:'#e2bd77',color:'#0a213c',textDecoration:'none',padding:'15px 22px',borderRadius:8,fontWeight:800,marginTop:12}}>Download Android TV APK</a>:state==='missing'?<div style={{padding:17,background:'#213d59',borderRadius:9,border:'1px solid #596776',color:'#f2dfbe',lineHeight:1.5}}>The APK was not found at the expected public address. Upload <code>{apkName}</code> under <code>public/downloads</code> in the appropriate GitHub branch.</div>:null}
  </section>;
 }
