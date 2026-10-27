@@ -2,8 +2,8 @@ import type {Metadata} from 'next';
 import ApkDownload from './ApkDownload';
 
 export const metadata:Metadata={
- title:'Downloads | Masjid Ibrahim Staging',
- description:'Download the staging Android TV app for Masjid Ibrahim digital signage.',
+ title:'Downloads | Masjid Ibrahim',
+ description:'Download the Masjid Ibrahim Android TV app.',
  robots:{index:false,follow:false}
 };
 export default function Downloads(){
@@ -29,7 +29,7 @@ export default function Downloads(){
    <footer style={{marginTop:30,display:'flex',gap:22,flexWrap:'wrap'}}>
     <a href="/tv-management" style={{color:'#e6c27f'}}>TV Management</a>
     <a href="/presenter-management" style={{color:'#e6c27f'}}>Presenter Management</a>
-    <a href="/" style={{color:'#e6c27f'}}>Staging Dashboard</a>
+    <a href="/" style={{color:'#e6c27f'}}>{production?'Production':'Staging'} Dashboard</a>
    </footer>
   </div>
  </main>;
