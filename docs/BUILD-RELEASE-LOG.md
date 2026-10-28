@@ -75,6 +75,9 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-FIX-008 | 2026-10-27 | Sync production D04 Premium WhatsApp QR without center icon; use 600x600, ECC H, quiet-zone margin 20, same clean styling; preserve new navy logo | `c5ed03f7` | Code comparison passed; visual/scanning test pending; staging deployment not requested | NOT APPROVED / NOT DEPLOYED | Production QR used as reference; development only; no APK rebuild |
 
+
+| MI-REL-STG-20261027 | 2026-10-27 | User-approved staging deployment of development source including MI-UI-005 and MI-FIX-008 | Source `4eac9a8d39e2d582776354498195f72bee117ace` | Vercel deployment `dpl_3z4VMYtCzG69eqNh2R482oJEKs6d` READY; UI tests pending | NONE | Staging project only (`masjid-ibrahim-staging`); no APK build |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
