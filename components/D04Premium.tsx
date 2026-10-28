@@ -20,7 +20,12 @@ export default function D04Premium({timeLabel,dateLabel,hijri,prayer,name,countd
     <div className="solar-row"><div><Sun/><span><small>SUNRISE</small><strong>{time(prayer?.sunrise||'')}</strong></span></div><div><Sun sunset/><span><small>SUNSET</small><strong>{time(prayer?.prayers.Maghrib?.start||'')}</strong></span></div></div>
    </section>
   </section>
-  <aside className="right-column"><header className="datetime"><strong>{timeLabel}</strong><div><span className="calendar-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 14h2M14 14h2M8 18h2M14 18h2"/></svg></span><p>{dateLabel}<small>{hijri||'Hijri date pending'}</small></p></div></header>
+  <aside className="right-column"><header className="datetime"><svg className="header-skyline" viewBox="0 0 1200 190" preserveAspectRatio="none" aria-hidden="true">
+    <g fill="#d8b26a" opacity=".47">
+      <path d="M0 189V139h30v-23h12V91h5V72h5v19h5v25h12v23h28v50z M95 189v-52h14v-19h12v-17h5V81h5v20h5v17h12v19h15v52z M175 189v-37h24v-18h14l16-19 16 19h14v18h25v37z M285 189v-33h18v-41h8V91h5V73h5v18h5v24h8v41h19v33z M368 189v-44h20v-24h8v-20h6V83h5v18h6v20h8v24h20v44z M455 189v-42h15v-23h9V99h6V76h6v23h6v25h9v23h15v42z M525 189v-36h27v-18h12l17-17 17 17h12v18h28v36z M649 189v-43h20v-22h9v-25h6V77h6v22h6v25h9v22h20v43z M735 189v-36h22v-20h10l15-19 15 19h10v20h22v36z M844 189v-42h17v-29h8V92h5V67h5v25h5v26h8v29h17v42z M920 189v-52h19v-21h9V94h6V71h6v23h6v22h9v21h19v52z M1002 189v-33h25v-17h12l18-18 18 18h12v17h25v33z M1114 189v-43h15v-27h9V95h6V73h6v22h6v24h9v27h15v43z M1180 189v-53h20v53z"/>
+      <path d="M0 189h1200v1H0z"/>
+    </g>
+   </svg><strong>{timeLabel}</strong><div><span className="calendar-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 14h2M14 14h2M8 18h2M14 18h2"/></svg></span><p>{dateLabel}<small>{hijri||'Hijri date pending'}</small></p></div></header>
    <section className="jum-card"><h2>JUMU’AH</h2><p>FRIDAY PRAYER TIMES</p><div className="jum-divider" aria-hidden="true"><span>✦</span></div><div className="jum-time"><small>FIRST JUMU’AH</small><strong>{time(prayer?.jumuah1||'')}</strong></div><div className="jum-time"><small>SECOND JUMU’AH</small><strong>{time(prayer?.jumuah2||'')}</strong></div></section>
   </aside>
   <footer className="premium-ticker"><div className="announcement"><svg aria-hidden="true" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,width:"clamp(19px,2vw,36px)",height:"clamp(19px,2vw,36px)"}}><path d="m3 11 18-5v12L3 13z"/><path d="M7 14.2 9 21h4l-2.5-7.8"/><path d="M3 11v2"/></svg><span>COMMUNITY ANNOUNCEMENTS</span></div><div className="ticker-viewport"><div className="ticker-track"><span>{tick||'Welcome to Masjid Ibrahim'}</span><span aria-hidden="true">{tick||'Welcome to Masjid Ibrahim'}</span></div></div></footer>
@@ -83,6 +88,16 @@ export default function D04Premium({timeLabel,dateLabel,hijri,prayer,name,countd
  .design-03 .next-main strong{color:#edc67d}
  .design-03 .next-main b{color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
  .design-03 .premium-ticker{grid-column:1/4;grid-row:4;margin:0 -1vw 0 0;padding:0 1.4vw;min-height:0}
+
+ .header-skyline{display:none}
+ .design-03 .datetime{position:relative;display:grid;grid-template-columns:45% 55%;grid-template-rows:1fr;align-items:center;justify-items:center;column-gap:0;overflow:hidden;padding:0 2vw;isolation:isolate}
+ .design-03 .header-skyline{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+ .design-03 .datetime::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#fffaf2d9,#fffaf2b5);z-index:-1}
+ .design-03 .datetime>strong{grid-column:1;font-size:clamp(43px,4.5vw,90px);white-space:nowrap;line-height:1.05;text-shadow:0 1px 4px #fffdf8}
+ .design-03 .datetime>div{grid-column:2;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:.8vw;min-width:0;white-space:nowrap}
+ .design-03 .datetime p{font-size:clamp(14px,1.32vw,27px);line-height:1.4;text-align:left;white-space:nowrap;text-shadow:0 1px 4px #fffdf8}
+ .design-03 .datetime small{font-size:clamp(12px,1.12vw,23px);font-weight:600;margin-top:.25vh}
+ @media(max-width:980px){.design-03 .datetime{grid-template-columns:42% 58%;padding:0 .5vw}.design-03 .datetime>strong{font-size:4vw}.design-03 .datetime p{font-size:1.2vw}.design-03 .datetime small{font-size:1.02vw}}
  @media(max-width:980px){.premium-d04.design-03{grid-template-columns:17% minmax(0,1fr) 23%}.design-03 .next-main b{font-size:2.1vw}.design-03 .jum-card h2{font-size:2.4vw}}
  `}</style>
  </main>
