@@ -59,6 +59,30 @@ export default function D04Premium({timeLabel,dateLabel,hijri,prayer,name,countd
  .design-03 .prayer-row.active{background:#082b4d;color:#fff;border-left:8px solid #d8b26a;box-shadow:inset 0 0 0 2px #d8b26a}
  .design-03 .prayer-row.active b,.design-03 .prayer-row.active span{color:#fff}
  .design-03 .premium-ticker{grid-column:1/4;grid-row:4;margin-top:0}
+
+ /* Approved Design 03 visual: navy identity rail, cream patterned canvas, gold framed highlights. */
+ .premium-d04.design-03{background:#fbf8ef;grid-template-columns:17% minmax(0,1fr) 21%;grid-template-rows:19% minmax(0,1fr) 23% 9%;column-gap:1vw;row-gap:.8vh;padding:0 1vw 0 0}
+ .design-03 .texture{opacity:.16;background:repeating-linear-gradient(45deg,transparent 0 85px,#d5bb87 86px,#d5bb87 87px,transparent 88px 170px),repeating-linear-gradient(-45deg,transparent 0 85px,#d5bb87 86px,#d5bb87 87px,transparent 88px 170px)}
+ .design-03 .left-rail{background:linear-gradient(180deg,#082b4d,#031f3b);border-right:3px solid var(--gold);padding:2.8vh 1.3vw 2vh;grid-row:1/4;justify-content:space-around}
+ .design-03 .logo-panel{flex:1;max-height:55%}.design-03 .logo-panel img{filter:brightness(0) invert(1);max-height:100%;object-fit:contain}
+ .design-03 .whatsapp-panel{flex:none;min-height:0;padding:1.1vh .5vw;background:#fff;border-radius:14px;gap:.5vh}
+ .design-03 .whatsapp-qr{width:min(11.4vw,210px)}
+ .design-03 .whatsapp-panel>b{font-size:clamp(12px,1.03vw,21px)}
+ .design-03 .datetime{grid-column:2/4;grid-row:1;background:linear-gradient(180deg,#fffdf8ee,#fff9e9dd);border-bottom:2px solid #d8b26a;margin:0 -1vw 0 0;border-radius:0 0 18px 18px}
+ .design-03 .datetime>strong{font-family:Georgia,'Times New Roman',serif;font-weight:800;color:#082b4d;font-size:clamp(49px,5.1vw,103px)}
+ .design-03 .datetime p{font-weight:700;color:#082b4d}
+ .design-03 .prayer-table{grid-row:2/4;box-shadow:0 5px 18px #082b4d2c;border-radius:17px}
+ .design-03 .table-head{min-height:11%;background:linear-gradient(120deg,#082b4d,#0b3d67);color:#edc67d}
+ .design-03 .prayer-rows{padding:0 .45vw}.design-03 .prayer-row{font-size:clamp(16px,1.8vw,37px)}
+ .design-03 .prayer-row.active{background:linear-gradient(100deg,#082b4d,#0a3b66);color:#fff;border:3px solid #d8b26a;border-left:8px solid #d8b26a;border-radius:13px;box-shadow:0 1px 10px #082b4d55}
+ .design-03 .jum-card{grid-row:2;border:3px solid var(--gold);border-radius:19px;background:linear-gradient(150deg,#0b385d,#041d38);box-shadow:0 4px 12px #082b4d33;padding:1vh .65vw}
+ .design-03 .jum-card h2{font-size:clamp(22px,2.6vw,54px)}
+ .design-03 .jum-time{border:1.5px solid var(--gold);border-radius:12px}
+ .design-03 .next-card{grid-row:3;border:3px solid var(--gold);background:linear-gradient(145deg,#0b3e68,#041d38);box-shadow:0 4px 12px #082b4d33}
+ .design-03 .next-title{color:#edc67d;font-family:Georgia,'Times New Roman',serif}
+ .design-03 .next-main strong{color:#edc67d}
+ .design-03 .next-main b{color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
+ .design-03 .premium-ticker{grid-column:1/4;grid-row:4;margin:0 -1vw 0 0;padding:0 1.4vw;min-height:0}
  @media(max-width:980px){.premium-d04.design-03{grid-template-columns:17% minmax(0,1fr) 23%}.design-03 .next-main b{font-size:2.1vw}.design-03 .jum-card h2{font-size:2.4vw}}
  `}</style>
  </main>
