@@ -93,6 +93,12 @@ export default function D04Premium({timeLabel,dateLabel,hijri,prayer,name,countd
  .design-03 .datetime p{font-size:clamp(14px,1.32vw,27px);line-height:1.4;text-align:left;white-space:nowrap;text-shadow:0 1px 4px #fffdf8}
  .design-03 .datetime small{font-size:clamp(12px,1.12vw,23px);font-weight:600;margin-top:.25vh}
  @media(max-width:980px){.design-03 .datetime{grid-template-columns:42% 58%;padding:0 .5vw}.design-03 .datetime>strong{font-size:clamp(40px,5.1vw,103px)}.design-03 .datetime p{font-size:1.2vw}.design-03 .datetime small{font-size:1.02vw}}
+
+ /* Design 03 refinement: shared geometric treatment and standard numerals */
+ .design-03 .left-rail{background:repeating-linear-gradient(45deg,transparent 0 44px,#d8b26a24 45px,#d8b26a24 46px,transparent 47px 90px),repeating-linear-gradient(-45deg,transparent 0 44px,#d8b26a24 45px,#d8b26a24 46px,transparent 47px 90px),linear-gradient(90deg,#fffaf2,#fff8e9);border-right:2px solid var(--gold)}
+ .design-03 .logo-panel img{filter:brightness(0) saturate(100%) invert(18%) sepia(55%) saturate(1519%) hue-rotate(180deg) brightness(92%)}
+ .design-03 .datetime>strong{font-family:Inter,Montserrat,Arial,sans-serif;font-weight:800;font-variant-numeric:normal;letter-spacing:0}
+ .design-03 .next-main b,.design-03 .jum-time strong,.design-03 .prayer-row span,.design-03 .solar-row strong{font-family:Inter,Montserrat,Arial,sans-serif;font-variant-numeric:normal;letter-spacing:0}
  @media(max-width:980px){.premium-d04.design-03{grid-template-columns:17% minmax(0,1fr) 23%}.design-03 .next-main b{font-size:2.1vw}.design-03 .jum-card h2{font-size:2.4vw}}
  `}</style>
  </main>
