@@ -2,7 +2,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import {DEFAULT_CONFIG,Config,DONATE,PRAYERS,PrayerName,PrayerSchedule} from '../lib/types';
 import {browserDb} from '../lib/supabase';
-const officialLogo={src:'/masjid-ibrahim-logo.svg'};
+const officialLogo={src:'/masjid-ibrahim-logo-new.png'};
 
 const TZ='America/Chicago';
 function clockDate(d:Date){return new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(d).replace(/^(\d\d)\/(\d\d)\/(\d{4})$/,'$3-$1-$2')}
