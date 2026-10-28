@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useState} from 'react';
 import {PRAYERS,type Config,type PrayerSchedule} from '../../lib/types';
-const officialLogo={src:'/masjid-ibrahim-logo.svg'};
+const officialLogo={src:'/masjid-ibrahim-logo-new.png'};
 import D04Premium from '../../components/D04Premium';
 import IqamahReminder from '../../components/IqamahReminder';
 
