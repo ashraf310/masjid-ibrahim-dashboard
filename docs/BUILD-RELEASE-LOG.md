@@ -73,6 +73,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-UI-005 | 2026-10-27 | Replace visible official logo in D01, D04 templates, prayer silence reminder, and D02/D03 audience standby with newly uploaded transparent image | Asset `public/masjid-ibrahim-logo-new.png`; commits `2980057`, `90a6ef7`, `bd1e2d2`, `8afbef9`, `4bd9e92` | NOT DEPLOYED; visual review pending | NOT APPROVED / NOT DEPLOYED | D04 corrected per owner feedback: new artwork uses original navy-blue CSS filter on cream background; removed temporary navy panels (`8d4e742`, `2cc00ad`). Visual test pending; staging not deployed; no APK rebuild |
 
+| MI-FIX-008 | 2026-10-27 | Sync production D04 Premium WhatsApp QR without center icon; use 600x600, ECC H, quiet-zone margin 20, same clean styling; preserve new navy logo | `c5ed03f7` | Code comparison passed; visual/scanning test pending; staging deployment not requested | NOT APPROVED / NOT DEPLOYED | Production QR used as reference; development only; no APK rebuild |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
