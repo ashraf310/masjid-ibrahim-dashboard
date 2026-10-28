@@ -116,6 +116,15 @@ export default function D04Premium({timeLabel,dateLabel,hijri,prayer,name,countd
  .design-03 .prayer-row.active{background:linear-gradient(90deg,#fae7b3,#fff2d3);color:#082b4d;border:2px solid #c9963e;border-left:9px solid #bc8123;box-shadow:inset 0 0 0 1px #dfba71,0 1px 7px #8b632836}
  .design-03 .prayer-row.active b,.design-03 .prayer-row.active span{color:#082b4d}
  @media(max-width:980px){.design-03 .datetime{grid-template-columns:1fr auto 1fr;padding:0 .6vw}.design-03 .datetime>div{gap:.2vw}}
+
+ /* Design 03: prevent date/clock collisions at standard and narrow TV resolutions. */
+ .design-03 .datetime{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:2vw;padding:0 1.7vw;min-width:0}
+ .design-03 .datetime>strong{grid-column:1;grid-row:1;justify-self:center;min-width:0;max-width:100%;font-size:clamp(34px,4vw,76px);font-weight:800;white-space:nowrap}
+ .design-03 .datetime>div{grid-column:2;grid-row:1;justify-self:end;max-width:100%;min-width:0;padding:0;gap:.35vw}
+ .design-03 .datetime p{min-width:0;max-width:100%;white-space:normal;text-align:right}
+ .design-03 .datetime .hijri-primary{font-size:clamp(17px,1.7vw,32px);line-height:1.18;white-space:normal}
+ .design-03 .datetime .gregorian-secondary{font-size:clamp(12px,1vw,20px);white-space:normal}
+ @media(max-width:980px){.design-03 .datetime{grid-template-columns:minmax(0,47%) minmax(0,53%);column-gap:.5vw;padding:0 .6vw}.design-03 .datetime>strong{font-size:clamp(28px,3.8vw,60px)}.design-03 .datetime .hijri-primary{font-size:clamp(14px,1.6vw,24px)}.design-03 .datetime .gregorian-secondary{font-size:clamp(10px,.95vw,16px)}}
  @media(max-width:980px){.premium-d04.design-03{grid-template-columns:17% minmax(0,1fr) 23%}.design-03 .next-main b{font-size:2.1vw}.design-03 .jum-card h2{font-size:2.4vw}}
  `}</style>
  </main>
