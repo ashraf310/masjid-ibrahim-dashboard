@@ -125,6 +125,17 @@ export default function D04Premium({timeLabel,dateLabel,hijri,prayer,name,countd
  .design-03 .datetime .hijri-primary{font-size:clamp(17px,1.7vw,32px);line-height:1.18;white-space:normal}
  .design-03 .datetime .gregorian-secondary{font-size:clamp(12px,1vw,20px);white-space:normal}
  @media(max-width:980px){.design-03 .datetime{grid-template-columns:minmax(0,47%) minmax(0,53%);column-gap:.5vw;padding:0 .6vw}.design-03 .datetime>strong{font-size:clamp(28px,3.8vw,60px)}.design-03 .datetime .hijri-primary{font-size:clamp(14px,1.6vw,24px)}.design-03 .datetime .gregorian-secondary{font-size:clamp(10px,.95vw,16px)}}
+
+ /* Align large clock with PRAYER header and date block with Jumu'ah left edge. */
+ .design-03 .datetime{grid-column:2/4;grid-row:1;display:grid;grid-template-columns:minmax(0,1fr) 21%;column-gap:1vw;padding:0;overflow:hidden}
+ .design-03 .datetime>strong{grid-column:1;grid-row:1;justify-self:center;align-self:center;font-size:clamp(52px,5.1vw,103px);font-weight:800;white-space:nowrap;max-width:100%;min-width:0}
+ .design-03 .datetime>div{grid-column:2;grid-row:1;justify-self:stretch;justify-content:flex-start;align-items:center;gap:.35vw;min-width:0;max-width:100%;padding:0 .3vw}
+ .design-03 .datetime .calendar-icon{display:none}
+ .design-03 .datetime p,.design-03 .datetime .hijri-primary,.design-03 .datetime .gregorian-secondary{text-align:left}
+ .design-03 .datetime p{width:100%;min-width:0;white-space:normal}
+ .design-03 .datetime .hijri-primary{font-size:clamp(16px,1.45vw,29px);line-height:1.22;font-weight:800}
+ .design-03 .datetime .gregorian-secondary{font-size:clamp(11px,.89vw,18px);line-height:1.35;font-weight:600}
+ @media(max-width:980px){.design-03 .datetime{grid-template-columns:minmax(0,1fr) 23%;column-gap:.7vw;padding:0}.design-03 .datetime>strong{font-size:clamp(40px,5.1vw,90px)}.design-03 .datetime .hijri-primary{font-size:clamp(12px,1.33vw,22px)}.design-03 .datetime .gregorian-secondary{font-size:clamp(9px,.85vw,15px)}}
  @media(max-width:980px){.premium-d04.design-03{grid-template-columns:17% minmax(0,1fr) 23%}.design-03 .next-main b{font-size:2.1vw}.design-03 .jum-card h2{font-size:2.4vw}}
  `}</style>
  </main>
