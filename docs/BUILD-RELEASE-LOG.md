@@ -71,6 +71,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-UI-004 | 2026-10-26 | Separate Android launcher icons: production manifest references official Masjid Ibrahim white logo on navy vector background; staging retains the platform's default icon and STAGING app label | `fb53ab71`, `da998ba5` | Production Android build/icon on device NOT TESTED; production APK unchanged | Not approved / not deployed | Included only in a FUTURE production APK build from approved code; staging APK unaffected |
 
+| MI-UI-005 | 2026-10-27 | Replace visible official logo in D01, D04 templates, prayer silence reminder, and D02/D03 audience standby with newly uploaded transparent image | Asset `public/masjid-ibrahim-logo-new.png`; commits `2980057`, `90a6ef7`, `bd1e2d2`, `8afbef9`, `4bd9e92` | NOT DEPLOYED; visual review pending | NOT APPROVED / NOT DEPLOYED | Development only; original assets retained; no APK rebuild needed for web logo update |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
