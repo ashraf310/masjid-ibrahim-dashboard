@@ -5,9 +5,9 @@ import {PRAYERS,type PrayerSchedule} from '../lib/types';
 const names:Record<string,string>={Fajr:'الفجر',Dhuhr:'الظهر',Asr:'العصر',Maghrib:'المغرب',Isha:'العشاء'};
 function time(v:string){if(!v)return '—';const [h,m]=v.split(':').map(Number);return (h%12||12)+':'+String(m).padStart(2,'0')+' '+(h<12?'AM':'PM')}
 function Sun({sunset=false}:{sunset?:boolean}){const c=sunset?'#f45137':'#ffac08';return <svg viewBox="0 0 84 65" width="clamp(36px,3.5vw,68px)" height="clamp(31px,2.9vw,57px)" fill="none" aria-hidden="true"><path d="M42 6v9M17 19l8 7M67 19l-8 7M7 38h10M67 38h10" stroke={c} strokeWidth="3" strokeLinecap="round"/><path d="M23 46a19 19 0 0 1 38 0Z" fill={c}/><path d="M8 49h68" stroke={c} strokeWidth="3.5" strokeLinecap="round"/>{sunset?<><path d="M20 56h44M31 62h22" stroke={c} strokeWidth="3" strokeLinecap="round"/></>:<path d="M20 56h44" stroke={c} strokeWidth="3" strokeLinecap="round"/>}</svg>}
-type Props={timeLabel:string;dateLabel:string;hijri:string;prayer:PrayerSchedule|null;name:string;countdown:string;highlight:string;tick:string;whatsappUrl:string;};
-export default function D04Premium({timeLabel,dateLabel,hijri,prayer,name,countdown,highlight,tick,whatsappUrl}:Props){
- return <main className="premium-d04" aria-label="D04 Premium Salah Timings">
+type Props={timeLabel:string;dateLabel:string;hijri:string;prayer:PrayerSchedule|null;name:string;countdown:string;highlight:string;tick:string;whatsappUrl:string;variant?:'premium-01'|'premium-03';};
+export default function D04Premium({timeLabel,dateLabel,hijri,prayer,name,countdown,highlight,tick,whatsappUrl,variant='premium-01'}:Props){
+ return <main className={"premium-d04"+(variant==='premium-03'?" design-03":"")} aria-label="D04 Premium Salah Timings">
   <div className="texture" aria-hidden="true"/>
   <aside className="left-rail">
    <div className="logo-panel"><img src={officialLogo.src} alt="Masjid Ibrahim official logo"/></div>
@@ -35,6 +35,31 @@ export default function D04Premium({timeLabel,dateLabel,hijri,prayer,name,countd
  .right-column{display:flex;flex-direction:column;min-width:0;min-height:0;gap:1.1vh}.datetime{flex:0 0 calc(23% + .3vh);min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;text-align:right;padding:1.2vh .2vw .6vh;color:#081b43}.datetime>strong{display:block;font-size:clamp(38px,4.05vw,83px);line-height:1.08;font-variant-numeric:tabular-nums;white-space:nowrap}.datetime>div{display:flex;gap:.5vw;justify-content:flex-end;align-items:center}.datetime .calendar-icon{width:clamp(22px,2.15vw,42px);height:clamp(22px,2.15vw,42px);display:inline-flex;align-items:center;justify-content:center;flex:none;color:#0a3761}.datetime .calendar-icon svg{width:100%;height:100%}.datetime p{font-size:clamp(13px,1.2vw,25px);font-weight:700;text-align:left;line-height:1.3;margin:.3vh 0}.datetime small{display:block;font-size:clamp(12px,1.07vw,22px);font-weight:500;margin-top:.25vh}
  .jum-card{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(160deg,#113f66 0%,#082d50 55%,#041c36 100%);border:2px solid var(--gold);border-radius:21px;padding:2.1vh 1vw;box-shadow:0 5px 20px #001b3440;color:#fff}.mosque-symbol{font-size:clamp(24px,3vw,58px);color:var(--gold);line-height:1}.jum-card h2{font-family:Georgia,'Times New Roman',serif;font-size:clamp(26px,3vw,57px);color:#edc67d;margin:0;white-space:nowrap}.jum-card p{font-size:clamp(11px,1.05vw,22px);letter-spacing:.09em;font-weight:700;margin:0 0 .3vh}.jum-divider{display:flex;align-items:center;gap:.6vw;width:86%;color:var(--gold);font-size:clamp(12px,1.05vw,21px);margin:0 auto .4vh}.jum-divider:before,.jum-divider:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,#d8b26a,transparent)}.jum-time{display:flex;flex-direction:column;justify-content:center;width:100%;flex:1;max-height:34%;border:1px solid #cfa862;border-radius:14px;margin:.55vh 0;padding:.75vh .2vw;background:linear-gradient(130deg,#ffffff13,#ffffff05);box-shadow:inset 0 1px 0 #ffffff1a}.jum-time small{font-size:clamp(11px,1.06vw,22px);font-weight:700;letter-spacing:.08em;color:#edcf98}.jum-time strong{font-size:clamp(25px,2.55vw,50px);font-variant-numeric:tabular-nums;line-height:1.16;margin-top:.6vh;white-space:nowrap}
  .premium-ticker{grid-column:1/4;grid-row:2;align-self:stretch;margin:1.2vh -1.7vw 0 0;display:flex;align-items:center;gap:1vw;padding:0 1.2vw;background:#082b4d;border-top:3px solid var(--gold);color:#fff;overflow:hidden}.announcement{color:#eac176;display:flex;align-items:center;gap:1vw;font-size:clamp(14px,1.55vw,30px);font-family:Georgia,serif;font-weight:800;white-space:nowrap}.announcement{border-right:2px solid var(--gold);padding-right:1vw}.ticker-viewport{flex:1;overflow:hidden;contain:layout paint}.ticker-track{display:flex;width:max-content;gap:0;animation:premium-scroll 30s linear infinite;white-space:nowrap;will-change:transform;backface-visibility:hidden;transform:translate3d(0,0,0)}.ticker-track span{display:inline-block;white-space:nowrap;padding-right:120px;font:clamp(24px,1.75vw,34px) Arial,sans-serif}@keyframes premium-scroll{to{transform:translateX(-50%)}}@media(max-width:980px){.premium-d04{grid-template-columns:18% minmax(0,1fr) 22%;column-gap:.7vw}.next-title{letter-spacing:0}.next-main strong{font-size:3.7vw}.next-main b{font-size:clamp(32px,4.7vw,82px)}.jum-card h2{font-size:2.6vw}}
+
+ /* Design 03: independent layout only. Design 01 styling and components remain intact. */
+ .premium-d04.design-03{grid-template-columns:16% minmax(0,1fr) 22%;grid-template-rows:18% minmax(0,1fr) 21% 9.5%;column-gap:1vw;row-gap:.8vh;padding-top:2vh;padding-bottom:2vh}
+ .design-03 .left-rail{grid-column:1;grid-row:1/4;padding-top:2vh;padding-bottom:1vh}
+ .design-03 .center-column,.design-03 .right-column{display:contents}
+ .design-03 .datetime{grid-column:2/4;grid-row:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 .5vw;gap:.3vh;min-height:0}
+ .design-03 .datetime>strong{font-size:clamp(44px,4.8vw,92px);line-height:1.08}
+ .design-03 .datetime>div{justify-content:center;align-items:center;gap:.8vw}
+ .design-03 .datetime p{text-align:center;font-size:clamp(15px,1.3vw,27px);margin:0}
+ .design-03 .datetime small{font-size:clamp(12px,1.05vw,22px)}
+ .design-03 .prayer-table{grid-column:2;grid-row:2/4;min-height:0}
+ .design-03 .jum-card{grid-column:3;grid-row:2;padding:1vh .7vw;border-radius:17px;min-height:0}
+ .design-03 .jum-card h2{font-size:clamp(24px,2.6vw,51px)}
+ .design-03 .jum-card p{font-size:clamp(10px,.9vw,19px)}
+ .design-03 .jum-time{max-height:none;min-height:0;margin:.3vh 0;padding:.3vh .2vw}
+ .design-03 .jum-time strong{font-size:clamp(22px,2.3vw,46px);margin-top:.2vh}
+ .design-03 .next-card{grid-column:3;grid-row:3;width:100%;height:auto;min-height:0;padding:.6vh .4vw;border-radius:16px}
+ .design-03 .next-title{font-size:clamp(15px,1.45vw,29px);letter-spacing:0}
+ .design-03 .next-main{display:flex;flex-direction:column;justify-content:center;gap:.25vh}
+ .design-03 .next-main strong,.design-03 .next-main strong.long-prayer-name{font-size:clamp(20px,2.1vw,43px);line-height:1.12;padding:0}
+ .design-03 .next-main b{border-left:0;font-size:clamp(21px,2.3vw,47px);line-height:1.12;letter-spacing:0}
+ .design-03 .prayer-row.active{background:#082b4d;color:#fff;border-left:8px solid #d8b26a;box-shadow:inset 0 0 0 2px #d8b26a}
+ .design-03 .prayer-row.active b,.design-03 .prayer-row.active span{color:#fff}
+ .design-03 .premium-ticker{grid-column:1/4;grid-row:4;margin-top:0}
+ @media(max-width:980px){.premium-d04.design-03{grid-template-columns:17% minmax(0,1fr) 23%}.design-03 .next-main b{font-size:2.1vw}.design-03 .jum-card h2{font-size:2.4vw}}
  `}</style>
  </main>
 }
