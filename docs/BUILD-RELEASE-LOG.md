@@ -78,6 +78,8 @@ This file records **verified** build and deployment state. Update it in the same
 
 | MI-REL-STG-20261027 | 2026-10-27 | User-approved staging deployment of development source including MI-UI-005 and MI-FIX-008 | Source `4eac9a8d39e2d582776354498195f72bee117ace` | Vercel deployment `dpl_3z4VMYtCzG69eqNh2R482oJEKs6d` READY; UI tests pending | NONE | Staging project only (`masjid-ibrahim-staging`); no APK build |
 
+| MI-REL-PROD-20261027 | 2026-10-27 | Approved production promotion of MI-UI-005 new logo; MI-FIX-008 clean QR already present in main | PR #7 / `5f45d9948217854b96cd9f61f9936822c2d08bfb` | Staging `dpl_3z4VMYtCzG69eqNh2R482oJEKs6d` READY; user requested production promotion | Production `dpl_Axvkiwm6Cr8JebLCnSvr3sZgu9am` READY | Selective release; no unrelated D03 features, no APK build; live visual verification pending |
+
 ## Template for future entry
 
 `MI-### | date | description | files/modules | local commit/test | staging deployment/test | production approval | production deployment | Android APK version/build | verified/rollback`
