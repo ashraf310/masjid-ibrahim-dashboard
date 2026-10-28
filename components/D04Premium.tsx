@@ -106,6 +106,16 @@ export default function D04Premium({timeLabel,dateLabel,hijri,prayer,name,countd
  .design-03 .datetime .hijri-primary{display:block;font-size:clamp(21px,1.95vw,39px);font-weight:800;line-height:1.2;color:#082b4d}
  .design-03 .datetime .gregorian-secondary{display:block;font-size:clamp(13px,1.14vw,24px);font-weight:600;line-height:1.35;margin-top:.5vh;color:#304a60}
  @media(max-width:980px){.design-03 .datetime .hijri-primary{font-size:clamp(16px,1.8vw,31px)}.design-03 .datetime .gregorian-secondary{font-size:clamp(11px,1.07vw,19px)}}
+
+ /* Design 03: central clock, right-aligned dates, distinct warm prayer highlight */
+ .design-03 .datetime{grid-template-columns:1fr auto 1fr;padding:0 1.5vw;gap:0}
+ .design-03 .datetime>strong{grid-column:2;justify-self:center;margin:0}
+ .design-03 .datetime>div{grid-column:3;justify-self:end;justify-content:flex-end;gap:.5vw;max-width:100%;padding-right:.25vw}
+ .design-03 .datetime p{text-align:right}
+ .design-03 .datetime .hijri-primary,.design-03 .datetime .gregorian-secondary{text-align:right}
+ .design-03 .prayer-row.active{background:linear-gradient(90deg,#fae7b3,#fff2d3);color:#082b4d;border:2px solid #c9963e;border-left:9px solid #bc8123;box-shadow:inset 0 0 0 1px #dfba71,0 1px 7px #8b632836}
+ .design-03 .prayer-row.active b,.design-03 .prayer-row.active span{color:#082b4d}
+ @media(max-width:980px){.design-03 .datetime{grid-template-columns:1fr auto 1fr;padding:0 .6vw}.design-03 .datetime>div{gap:.2vw}}
  @media(max-width:980px){.premium-d04.design-03{grid-template-columns:17% minmax(0,1fr) 23%}.design-03 .next-main b{font-size:2.1vw}.design-03 .jum-card h2{font-size:2.4vw}}
  `}</style>
  </main>
