@@ -1,5 +1,5 @@
 'use client';
-const officialLogo={src:'/masjid-ibrahim-logo.svg'};
+const officialLogo={src:'/masjid-ibrahim-logo-new.png'};
 
 const arabic:Record<string,string>={Fajr:'الفجر',Dhuhr:'الظهر',Asr:'العصر',Maghrib:'المغرب',Isha:'العشاء','Jumu’ah 1':'الجمعة الأولى','Jumu’ah 2':'الجمعة الثانية'};
 export default function IqamahReminder({prayer,preview=false}:{prayer:string;preview?:boolean}){

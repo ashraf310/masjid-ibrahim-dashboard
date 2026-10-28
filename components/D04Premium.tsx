@@ -1,5 +1,5 @@
 'use client';
-const officialLogo={src:'/masjid-ibrahim-logo.svg'};
+const officialLogo={src:'/masjid-ibrahim-logo-new.png'};
 import {PRAYERS,type PrayerSchedule} from '../lib/types';
 
 const names:Record<string,string>={Fajr:'الفجر',Dhuhr:'الظهر',Asr:'العصر',Maghrib:'المغرب',Isha:'العشاء'};
