@@ -61,7 +61,7 @@ export default function SalahTimings(){
  
  if(previewPrayer&&[...PRAYERS,'Jumu’ah 1','Jumu’ah 2'].includes(previewPrayer))return <IqamahReminder prayer={previewPrayer} preview/>;
  if(activePrayer)return <IqamahReminder prayer={activePrayer}/>;
- if((cfg?.d04Design||'premium-01')==='premium-01')return <D04Premium timeLabel={timeLabel} dateLabel={dateLabel} hijri={prayer?.hijri||''} prayer={prayer} name={next?.name.toUpperCase()||(tomorrowReady?'FAJR':'—')} countdown={countdown} highlight={next?.name|| (tomorrowReady?'Fajr':'')} tick={cfg?.d04Ticker||''} whatsappUrl={cfg?.d04WhatsAppUrl||''}/>;
+ if(['premium-01','premium-03'].includes(cfg?.d04Design||'premium-01'))return <D04Premium variant={cfg?.d04Design==='premium-03'?'premium-03':'premium-01'} timeLabel={timeLabel} dateLabel={dateLabel} hijri={prayer?.hijri||''} prayer={prayer} name={next?.name.toUpperCase()||(tomorrowReady?'FAJR':'—')} countdown={countdown} highlight={next?.name|| (tomorrowReady?'Fajr':'')} tick={cfg?.d04Ticker||''} whatsappUrl={cfg?.d04WhatsAppUrl||''}/>;
  return <main className={'d04 '+(cfg?.d04Design==='cream-gold'?'cream-gold':'blue-classic')} aria-label="D04 Salah Timings Dashboard">
  <div className="sky"/>
  <header className="heading"><div className="dateDetails"><div className="clock" aria-label="Current time">{timeLabel}</div><div className="dateRow"><span className="calendarIcon"><CalendarIcon/></span><div className="dateText"><strong>{dateLabel}</strong><small>{prayer?.hijri||'Hijri date pending'}</small></div></div></div></header>
