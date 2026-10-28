@@ -20,7 +20,7 @@ export default function D04Premium({timeLabel,dateLabel,hijri,prayer,name,countd
     <div className="solar-row"><div><Sun/><span><small>SUNRISE</small><strong>{time(prayer?.sunrise||'')}</strong></span></div><div><Sun sunset/><span><small>SUNSET</small><strong>{time(prayer?.prayers.Maghrib?.start||'')}</strong></span></div></div>
    </section>
   </section>
-  <aside className="right-column"><header className="datetime"><strong>{timeLabel}</strong><div><span className="calendar-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 14h2M14 14h2M8 18h2M14 18h2"/></svg></span><p>{dateLabel}<small>{hijri||'Hijri date pending'}</small></p></div></header>
+  <aside className="right-column"><header className="datetime"><strong>{timeLabel}</strong><div><span className="calendar-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 14h2M14 14h2M8 18h2M14 18h2"/></svg></span><p>{variant==='premium-03'?<><span className="hijri-primary">{hijri||'Hijri date pending'}</span><small className="gregorian-secondary">{dateLabel}</small></>:<>{dateLabel}<small>{hijri||'Hijri date pending'}</small></>}</p></div></header>
    <section className="jum-card"><h2>JUMU’AH</h2><p>FRIDAY PRAYER TIMES</p><div className="jum-divider" aria-hidden="true"><span>✦</span></div><div className="jum-time"><small>FIRST JUMU’AH</small><strong>{time(prayer?.jumuah1||'')}</strong></div><div className="jum-time"><small>SECOND JUMU’AH</small><strong>{time(prayer?.jumuah2||'')}</strong></div></section>
   </aside>
   <footer className="premium-ticker"><div className="announcement"><svg aria-hidden="true" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,width:"clamp(19px,2vw,36px)",height:"clamp(19px,2vw,36px)"}}><path d="m3 11 18-5v12L3 13z"/><path d="M7 14.2 9 21h4l-2.5-7.8"/><path d="M3 11v2"/></svg><span>COMMUNITY ANNOUNCEMENTS</span></div><div className="ticker-viewport"><div className="ticker-track"><span>{tick||'Welcome to Masjid Ibrahim'}</span><span aria-hidden="true">{tick||'Welcome to Masjid Ibrahim'}</span></div></div></footer>
@@ -99,6 +99,13 @@ export default function D04Premium({timeLabel,dateLabel,hijri,prayer,name,countd
  .design-03 .logo-panel img{filter:brightness(0) saturate(100%) invert(18%) sepia(55%) saturate(1519%) hue-rotate(180deg) brightness(92%)}
  .design-03 .datetime>strong{font-family:Inter,Montserrat,Arial,sans-serif;font-weight:800;font-variant-numeric:normal;letter-spacing:0}
  .design-03 .next-main b,.design-03 .jum-time strong,.design-03 .prayer-row span,.design-03 .solar-row strong{font-family:Inter,Montserrat,Arial,sans-serif;font-variant-numeric:normal;letter-spacing:0}
+
+ /* Design 03: perfectly matched header and identity backgrounds, Hijri-first dates */
+ .design-03 .datetime{background:repeating-linear-gradient(45deg,transparent 0 44px,#d8b26a24 45px,#d8b26a24 46px,transparent 47px 90px),repeating-linear-gradient(-45deg,transparent 0 44px,#d8b26a24 45px,#d8b26a24 46px,transparent 47px 90px),linear-gradient(90deg,#fffaf2,#fff8e9)}
+ .design-03 .datetime::before{display:none}
+ .design-03 .datetime .hijri-primary{display:block;font-size:clamp(21px,1.95vw,39px);font-weight:800;line-height:1.2;color:#082b4d}
+ .design-03 .datetime .gregorian-secondary{display:block;font-size:clamp(13px,1.14vw,24px);font-weight:600;line-height:1.35;margin-top:.5vh;color:#304a60}
+ @media(max-width:980px){.design-03 .datetime .hijri-primary{font-size:clamp(16px,1.8vw,31px)}.design-03 .datetime .gregorian-secondary{font-size:clamp(11px,1.07vw,19px)}}
  @media(max-width:980px){.premium-d04.design-03{grid-template-columns:17% minmax(0,1fr) 23%}.design-03 .next-main b{font-size:2.1vw}.design-03 .jum-card h2{font-size:2.4vw}}
  `}</style>
  </main>
