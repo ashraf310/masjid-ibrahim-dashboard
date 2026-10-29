@@ -29,8 +29,8 @@ public final class MainActivity extends Activity {
  private static final String HOST="https://masjid-ibrahim-staging.vercel.app";
  private static final String CONFIG=HOST+"/api/device/config";
  private static final String PAIR=HOST+"/api/device/pair";
- private static final String AUDIENCE=HOST+"/api/audience/current";
- private static final String D03=HOST+"/api/d03";
+ // MI-ENH-003: presentation state is included in authenticated device config.
+ 
  private static final String D03_LIVE=HOST+"/public?tv=1";
  private static final String LIVE=HOST+"/audience-live?tv=1";
  private final Handler handler=new Handler(Looper.getMainLooper());
@@ -125,18 +125,14 @@ public final class MainActivity extends Activity {
    if(!running||requestInFlight)return;
    if(token.isEmpty()){showSetup("This staging TV is not paired.");return;}
    requestInFlight=true;
-   final boolean refreshConfig=!paired||System.currentTimeMillis()-lastConfig>=15000;
+   final boolean refreshConfig=!paired||System.currentTimeMillis()-lastConfig>=(presenting||lastD03Live?1500:10000);
    final String key=token;
    io.execute(()->{
-    Reply config=null,audience=null,d03=null;
+    Reply config=null;
     try{
      if(refreshConfig)config=get(CONFIG,key);
-     if(!refreshConfig||config.status==200)d03=get(D03,null);
-     if(!refreshConfig||(config.status==200&&config.json!=null)) {
-      if((!refreshConfig&&followLive)||(refreshConfig&&config.json.optBoolean("followD02",false)))audience=get(AUDIENCE,null);
-     }
     }catch(Exception ignored){/* Keep existing screen on transient network errors. */}
-    final Reply c=config,live=audience,screenShare=d03;
+    final Reply c=config;
     handler.post(()->{
      requestInFlight=false;if(!running||!key.equals(token))return;
      if(c!=null){
@@ -151,22 +147,17 @@ public final class MainActivity extends Activity {
        if(!"D01".equals(dashboard)&&!"D04".equals(dashboard)){showSetup("Assign D01 or D04 to this TV in TV Management.");return;}
        defaultUrl="D01".equals(dashboard)?HOST+"/":HOST+"/d04";
        followLive=c.json.optBoolean("followD02",false);
-       if(!followLive)lastD03Live=false;
+       presenting=followLive&&c.json.optBoolean("d02Live",false);
+       lastD03Live=followLive&&c.json.optBoolean("d03Live",false);
        paired=true;lastConfig=System.currentTimeMillis();
       }
      }
      if(paired){
       // Failed checks never switch away from the current screen. Non-participating TVs never enter D02.
-      if(!followLive)presenting=false;
-      else if(live!=null&&live.status==200&&live.json!=null)presenting="live".equals(live.json.optString("state"));
-      // A failed /api/d03 request is not evidence that the stream stopped.
-      // Retain the last confirmed state until a successful status check.
-      if(screenShare!=null&&screenShare.status==200&&screenShare.json!=null)
-       lastD03Live=screenShare.json.optBoolean("live",false);
       boolean d03Live=followLive&&lastD03Live;
       navigate(d03Live?D03_LIVE:(presenting?LIVE:defaultUrl));
      }
-     handler.postDelayed(poll,1500);
+     handler.postDelayed(poll,presenting||lastD03Live?1500:10000);
     });
    });
   }
