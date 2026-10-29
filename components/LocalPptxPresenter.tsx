@@ -52,12 +52,13 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  const [publishMessage,setPublishMessage]=useState('');
  const [audiencePath,setAudiencePath]=useState('');
  const [liveMode,setLiveMode]=useState(false);
+ const [durationMinutes,setDurationMinutes]=useState(120),[expiresAt,setExpiresAt]=useState(''),[secondsLeft,setSecondsLeft]=useState(0),[dismissWarning,setDismissWarning]=useState(false);
  const [speakerMode,setSpeakerMode]=useState(false);
  const [qaOpen,setQaOpen]=useState(false);
- async function liveAction(action:'start'|'advance'|'end'|'ready'|'link',slide?:number,total?:number,idOverride?:string){
+ async function liveAction(action:'start'|'advance'|'end'|'ready'|'link'|'extend',slide?:number,total?:number,idOverride?:string,minutes?:number){
   const targetId=idOverride||resolvedId;
   if(!targetId||!presenterToken)throw Error('Presentation upload required');
-  const response=await fetch('/api/presenter/live',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+presenterToken},body:JSON.stringify({presentationId:targetId,action,slide,total})});
+  const response=await fetch('/api/presenter/live',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+presenterToken},body:JSON.stringify({presentationId:targetId,action,slide,total,durationMinutes:minutes})});
   const result=await response.json();
   if(!response.ok)throw Error(result.error||'Cannot update presentation');
   if(result.audiencePath)setAudiencePath(result.audiencePath);
@@ -98,9 +99,11 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
   finally{setPublishing(false)}
  }
  function documentGlobalCanvas(){return window.document.createElement('canvas')}
- async function start(){try{await liveAction('start');setLiveMode(true);setSpeakerMode(true);setIndex(0);setPublishMessage('Staging presentation live. Audience sees slides only.')}catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot start')}}
- async function end(){try{await liveAction('end');setLiveMode(false);setPublishMessage('Presentation ended and cleared.');onEnded()}catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot end')}}
+ async function start(){try{const started=await liveAction('start',undefined,undefined,undefined,durationMinutes);setExpiresAt(started.expiresAt);setDismissWarning(false);setLiveMode(true);setSpeakerMode(true);setIndex(0);setPublishMessage('Staging presentation live. Audience sees slides only.')}catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot start')}}
+ async function end(){try{await liveAction('end');setLiveMode(false);setExpiresAt('');setPublishMessage('Presentation ended and cleared.');onEnded()}catch(e){setPublishMessage(e instanceof Error?e.message:'Cannot end')}}
 
+ async function extend(minutes:number){try{const result=await liveAction('extend',undefined,undefined,undefined,minutes);setExpiresAt(result.expiresAt);setDismissWarning(false)}catch(e){setPublishMessage(String(e))}}
+ useEffect(()=>{if(!liveMode||!expiresAt)return;const tick=()=>{const n=Math.max(0,Math.ceil((Date.parse(expiresAt)-Date.now())/1000));setSecondsLeft(n);if(n===0){setLiveMode(false);setExpiresAt('');setPublishMessage('Presentation window expired.')}};tick();const t=setInterval(tick,1000);return()=>clearInterval(t)},[liveMode,expiresAt]);
  const onPageCount=useCallback((n:number)=>setPageCount(n),[]);
  const [showAdvanced,setShowAdvanced]=useState(false);
  const [converting,setConverting]=useState(false);
@@ -167,6 +170,9 @@ export default function LocalPptxPresenter({file,presenterToken,presentationId,e
  {publishMessage&&<p role="status">{publishMessage}</p>}
  {prepared&&<p><a style={{color:'#e2bd77'}} href={audiencePath} target="_blank" rel="noopener noreferrer">View audience display in a new tab</a></p>}
  <h3>Step 3 — Start presenting</h3>
+ {!liveMode&&<label>Presentation duration: <select value={durationMinutes} onChange={e=>setDurationMinutes(Number(e.target.value))}>{[30,60,120,180,240,360,480].map(n=><option value={n} key={n}>{n<60?n+' minutes':n/60+' hours'}</option>)}</select></label>}
+ {liveMode&&<p>LIVE — {Math.floor(secondsLeft/60)}m {secondsLeft%60}s remaining</p>}
+ {liveMode&&secondsLeft>0&&secondsLeft<=300&&!dismissWarning&&<aside role="alert" style={{padding:12,background:'#694221'}}>Presentation ends in five minutes. <button onClick={()=>void extend(30)}>Extend 30 minutes</button> <button onClick={()=>void extend(60)}>Extend 1 hour</button> <button onClick={()=>setDismissWarning(true)}>Dismiss</button></aside>}
  <p style={{color:'#cbd9e9'}}>Start only when you are ready for the audience to see your slides.</p>
  {!liveMode?<button type="button" style={{fontSize:20,padding:'16px 25px',background:'#e2bd77'}} disabled={!prepared||publishing} onClick={()=>void start()}>▶ Start presentation</button>:<><strong style={{color:'#a8f3bc',marginRight:12}}>● LIVE</strong><button type="button" style={{fontSize:18}} onClick={()=>setSpeakerMode(true)}>Open speaker view</button><button type="button" style={{background:'#c62828',color:'white',fontSize:18}} onClick={()=>void end()}>■ End presentation</button></>}
  {!liveMode&&prepared&&<p style={{fontSize:14}}>Speaker view opens after you start. It shows your notes and slide controls privately.</p>}
