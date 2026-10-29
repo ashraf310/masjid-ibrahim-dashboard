@@ -38,7 +38,7 @@ export async function POST(req:NextRequest){
     if(mode==='enable'&&(!Number.isInteger(minutes)||minutes<15||minutes>480))return NextResponse.json({error:'Select 15–480 minutes'},{status:400,headers});
     const now=new Date(),end=new Date(now.getTime()+minutes*60000).toISOString();
     const changes:Record<string,unknown>={updated_at:now.toISOString()};
-    if(mode==='lock'||mode==='disable'){Object.assign(changes,{admin_locked:mode==='lock',admin_enabled_until:null,status:'waiting',session_id:null,presenter_id:null,heartbeat_at:null,expires_at:null});}
+    if(mode==='lock'||mode==='disable'){Object.assign(changes,{admin_locked:true,admin_enabled_until:null,status:'waiting',session_id:null,presenter_id:null,heartbeat_at:null,expires_at:null});}
     if(mode==='unlock'){Object.assign(changes,{admin_locked:false,admin_enabled_until:null});}
     if(mode==='enable'){Object.assign(changes,{admin_locked:false,admin_enabled_until:end});}
     const {error}=await db.from('d03_live_state').update(changes).eq('id',1);
@@ -54,7 +54,7 @@ export async function POST(req:NextRequest){
    const minutes=Number(input.durationMinutes);
    if(mode==='enable'&&(!Number.isInteger(minutes)||minutes<15||minutes>480))return NextResponse.json({error:'Select 15–480 minutes'},{status:400,headers});
    const update:Record<string,unknown>={updated_at:new Date().toISOString()};
-   if(mode==='lock'||mode==='disable')Object.assign(update,{admin_locked:mode==='lock',admin_enabled_until:null});
+   if(mode==='lock'||mode==='disable')Object.assign(update,{admin_locked:true,admin_enabled_until:null});
    if(mode==='unlock')Object.assign(update,{admin_locked:false,admin_enabled_until:null});
    if(mode==='enable')Object.assign(update,{admin_locked:false,admin_enabled_until:new Date(Date.now()+minutes*60000).toISOString()});
    const {error}=await db.from('presentation_service_controls').update(update).eq('service','d02');
