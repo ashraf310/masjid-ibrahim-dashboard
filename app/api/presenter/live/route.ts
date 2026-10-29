@@ -9,11 +9,15 @@ export async function POST(req:NextRequest){
  const {data:owner,error:authError}=await db.from('presenter_links').select('id').eq('token_hash',tokenDigest(token)).is('revoked_at',null).maybeSingle();
  if(authError||!owner)return NextResponse.json({error:'Unauthorized'},{status:401,headers});
  let input:unknown;try{input=await req.json()}catch{return NextResponse.json({error:'Invalid request'},{status:400,headers})}
- const b=input as {presentationId?:unknown;action?:unknown;total?:unknown;slide?:unknown};
+ const b=input as {presentationId?:unknown;action?:unknown;total?:unknown;slide?:unknown;durationMinutes?:unknown};
  const id=b?.presentationId;
  if(typeof id!=='string'||!/^[0-9a-f-]{36}$/i.test(id))return NextResponse.json({error:'Invalid presentation'},{status:400,headers});
- const {data:p,error:e}=await db.from('presentations').select('id,state,total_slides,current_slide').eq('id',id).eq('presenter_id',owner.id).maybeSingle();
+ const {data:p,error:e}=await db.from('presentations').select('id,state,total_slides,current_slide,expires_at').eq('id',id).eq('presenter_id',owner.id).maybeSingle();
  if(e||!p)return NextResponse.json({error:'Presentation not found'},{status:404,headers});
+ const {data:service,error:serviceError}=await db.from('presentation_service_controls').select('admin_locked,admin_enabled_until').eq('service','d02').single();
+ if(serviceError)return NextResponse.json({error:'D02 controls unavailable'},{status:503,headers});
+ const expired=p.state==='live'&&(!p.expires_at||new Date(p.expires_at).getTime()<=Date.now());
+ if(expired){await db.from('presentations').update({state:'ended',ended_at:new Date().toISOString()}).eq('id',id).eq('state','live');p.state='ended';}
  if(b.action==='link'){
   if(!['ready','live'].includes(p.state))return NextResponse.json({error:'Presentation is '+p.state+'. Clear an ended presentation or prepare new slides first.'},{status:409,headers});
  }else if(b.action==='ready'){
@@ -27,10 +31,22 @@ export async function POST(req:NextRequest){
   const {error:updateError}=await db.from('presentations').update({state:'ready',total_slides:total,current_slide:0}).eq('id',id).in('state',['processing','ready']);
   if(updateError)return NextResponse.json({error:'Unable to mark presentation ready'},{status:503,headers});
  }else if(b.action==='start'){
+  if(service.admin_locked)return NextResponse.json({error:'Presentation Portal is locked by Admin'},{status:423,headers});
+  const minutes=b.durationMinutes;
+  if(typeof minutes!=='number'||!Number.isInteger(minutes)||minutes<15||minutes>480)return NextResponse.json({error:'Select a duration from 15 to 480 minutes'},{status:400,headers});
+  if(service.admin_enabled_until&&new Date(service.admin_enabled_until).getTime()<Date.now())return NextResponse.json({error:'Admin enable window expired'},{status:423,headers});
   if(p.state!=='ready'||p.total_slides<1)return NextResponse.json({error:'Prepare all slides before starting'},{status:409,headers});
-  const {error:changeError}=await db.from('presentations').update({state:'live',started_at:new Date().toISOString(),current_slide:0}).eq('id',id).eq('state','ready');
+  const {error:changeError}=await db.from('presentations').update({state:'live',started_at:new Date().toISOString(),expires_at:new Date(Date.now()+(minutes as number)*60000).toISOString(),current_slide:0}).eq('id',id).eq('state','ready');
   if(changeError)return NextResponse.json({error:'Unable to start'},{status:503,headers});
+ }else if(b.action==='extend'){
+  if(service.admin_locked||p.state!=='live')return NextResponse.json({error:'Presentation is not active'},{status:409,headers});
+  if(b.durationMinutes!==30&&b.durationMinutes!==60)return NextResponse.json({error:'Extend by 30 or 60 minutes'},{status:400,headers});
+  const expiresAt=new Date(new Date(p.expires_at).getTime()+(b.durationMinutes as number)*60000).toISOString();
+  const {error:extendError}=await db.from('presentations').update({expires_at:expiresAt}).eq('id',id).eq('state','live').gt('expires_at',new Date().toISOString());
+  if(extendError)return NextResponse.json({error:'Could not extend session'},{status:503,headers});
+  return NextResponse.json({ok:true,expiresAt},{headers});
  }else if(b.action==='advance'){
+  if(service.admin_locked||p.state!=='live')return NextResponse.json({error:'Presentation is disabled or expired'},{status:409,headers});
   const next=b.slide;
   if(p.state!=='live'||typeof next!=='number'||!Number.isInteger(next)||next<0||next>=p.total_slides)return NextResponse.json({error:'Invalid slide change'},{status:409,headers});
   const {error:changeError}=await db.from('presentations').update({current_slide:next,presenter_last_seen_at:new Date().toISOString()}).eq('id',id).eq('state','live');
@@ -42,5 +58,5 @@ export async function POST(req:NextRequest){
   try{await deletePresentationAssets(db,id)}catch(e){return NextResponse.json({error:'Presentation ended, but cleanup did not finish. Admin can clear remaining assets. '+(e instanceof Error?e.message:'')},{status:503,headers})}
   return NextResponse.json({ok:true,cleared:true},{headers});
  }else return NextResponse.json({error:'Invalid action'},{status:400,headers});
- return NextResponse.json({ok:true,audiencePath:'/live'},{headers});
+ return NextResponse.json({ok:true,audiencePath:'/live',expiresAt:b.action==='start'?new Date(Date.now()+(b.durationMinutes as number)*60000).toISOString():undefined},{headers});
 }
