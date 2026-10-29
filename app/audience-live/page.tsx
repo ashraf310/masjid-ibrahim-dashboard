@@ -17,7 +17,7 @@ export default function FixedAudienceScreen(){
   const listener=()=>setFullscreen(Boolean(document.fullscreenElement));
   document.addEventListener('fullscreenchange',listener);
   let active=true;
-  let timer:ReturnType<typeof setTimeout>|undefined;
+  let timer:number|undefined;
   const check=async()=>{
    let nextDelay=60000; // D02 disabled: idle audience screens do not need 1.5-second polling.
    try{
