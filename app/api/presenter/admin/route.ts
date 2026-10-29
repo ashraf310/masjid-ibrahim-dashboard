@@ -27,6 +27,44 @@ export async function POST(req:NextRequest){
  let body:unknown;try{body=await req.json()}catch{return NextResponse.json({error:'Invalid request'},{status:400,headers})}
  if(!body||typeof body!=='object')return NextResponse.json({error:'Invalid request'},{status:400,headers});
  const input=body as Record<string,unknown>;
+ if(input.action==='service-status'||input.action==='service-control'){
+  const service=input.service;
+  if(service!=='d02'&&service!=='d03')return NextResponse.json({error:'Choose Presentation Portal or Live Presentation'},{status:400,headers});
+  if(service==='d03'){
+   if(input.action==='service-control'){
+    const mode=input.mode;
+    if(!['lock','unlock','enable','disable'].includes(String(mode)))return NextResponse.json({error:'Invalid control'},{status:400,headers});
+    const minutes=Number(input.durationMinutes);
+    if(mode==='enable'&&(!Number.isInteger(minutes)||minutes<15||minutes>480))return NextResponse.json({error:'Select 15–480 minutes'},{status:400,headers});
+    const now=new Date(),end=new Date(now.getTime()+minutes*60000).toISOString();
+    const changes:Record<string,unknown>={updated_at:now.toISOString()};
+    if(mode==='lock'||mode==='disable'){Object.assign(changes,{admin_locked:mode==='lock',admin_enabled_until:null,status:'waiting',session_id:null,presenter_id:null,heartbeat_at:null,expires_at:null});}
+    if(mode==='unlock'){Object.assign(changes,{admin_locked:false,admin_enabled_until:null});}
+    if(mode==='enable'){Object.assign(changes,{admin_locked:false,admin_enabled_until:end});}
+    const {error}=await db.from('d03_live_state').update(changes).eq('id',1);
+    if(error)return NextResponse.json({error:'D03 control failed. Apply MI-ENH-003 migration.'},{status:503,headers});
+   }
+   const {data,error}=await db.from('d03_live_state').select('status,expires_at,admin_locked,admin_enabled_until,heartbeat_at').eq('id',1).single();
+   if(error)return NextResponse.json({error:'D03 controls unavailable; migration required'},{status:503,headers});
+   return NextResponse.json({service,locked:data.admin_locked,live:data.status==='live'&&!!data.expires_at&&new Date(data.expires_at).getTime()>Date.now()&&!!data.heartbeat_at&&Date.now()-new Date(data.heartbeat_at).getTime()<15000,expiresAt:data.expires_at,enabledUntil:data.admin_enabled_until},{headers});
+  }
+  if(input.action==='service-control'){
+   const mode=input.mode;
+   if(!['lock','unlock','enable','disable'].includes(String(mode)))return NextResponse.json({error:'Invalid control'},{status:400,headers});
+   const minutes=Number(input.durationMinutes);
+   if(mode==='enable'&&(!Number.isInteger(minutes)||minutes<15||minutes>480))return NextResponse.json({error:'Select 15–480 minutes'},{status:400,headers});
+   const update:Record<string,unknown>={updated_at:new Date().toISOString()};
+   if(mode==='lock'||mode==='disable')Object.assign(update,{admin_locked:mode==='lock',admin_enabled_until:null});
+   if(mode==='unlock')Object.assign(update,{admin_locked:false,admin_enabled_until:null});
+   if(mode==='enable')Object.assign(update,{admin_locked:false,admin_enabled_until:new Date(Date.now()+minutes*60000).toISOString()});
+   const {error}=await db.from('presentation_service_controls').update(update).eq('service','d02');
+   if(error)return NextResponse.json({error:'D02 controls unavailable; migration required'},{status:503,headers});
+   if(mode==='lock'||mode==='disable')await db.from('presentations').update({state:'ended'}).eq('state','live');
+  }
+  const {data,error}=await db.from('presentation_service_controls').select('admin_locked,admin_enabled_until').eq('service','d02').single();
+  if(error)return NextResponse.json({error:'D02 controls unavailable; migration required'},{status:503,headers});
+  return NextResponse.json({service,locked:data.admin_locked,enabledUntil:data.admin_enabled_until},{headers});
+ }
  if(input.action==='qa-settings'){
   const {data:row,error}=await db.from('display_config').select('published').eq('id',1).single();
   if(error||!row)return NextResponse.json({error:'Staging display configuration unavailable'},{status:503,headers});
