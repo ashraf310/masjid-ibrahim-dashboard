@@ -14,3 +14,6 @@ insert into public.presentation_service_controls(service) values ('d02') on conf
 alter table public.presentation_service_controls enable row level security;
 -- No anonymous table access: API uses the service-role client.
 -- Expiration is checked on every D03 GET/heartbeat, not by a paid cron.
+
+-- D02 timed presentation lifecycle (used only after Go Live is restored).
+alter table public.presentations add column if not exists expires_at timestamptz;
