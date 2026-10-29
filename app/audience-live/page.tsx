@@ -17,19 +17,23 @@ export default function FixedAudienceScreen(){
   const listener=()=>setFullscreen(Boolean(document.fullscreenElement));
   document.addEventListener('fullscreenchange',listener);
   let active=true;
+  let timer:ReturnType<typeof setTimeout>|undefined;
   const check=async()=>{
+   let nextDelay=60000; // D02 disabled: idle audience screens do not need 1.5-second polling.
    try{
     const response=await fetch('/api/audience/current',{cache:'no-store'});
     if(!response.ok)throw new Error('Audience feed unavailable');
     const state=await response.json() as Audience;
     if(!active)return;
+    nextDelay=state.state==='live'?1500:60000;
     const identity=state.state+':'+(state.presentationId||'')+':'+(state.slide??-1);
     if(identity!==last.current||Date.now()-lastRefresh.current>45000||state.qaEnabled!==screenQa.current.enabled||state.qaUrl!==screenQa.current.url){last.current=identity;lastRefresh.current=Date.now();screenQa.current={enabled:state.qaEnabled,url:state.qaUrl};setScreen(state);}
     setError('');
    }catch{if(active)setError('Reconnecting to staging audience feed...')}
+   finally{if(active)timer=window.setTimeout(()=>void check(),nextDelay)}
   };
-  void check();const timer=window.setInterval(()=>void check(),1500);
-  return()=>{active=false;window.clearInterval(timer);document.removeEventListener('fullscreenchange',listener)};
+  void check();
+  return()=>{active=false;if(timer)window.clearTimeout(timer);document.removeEventListener('fullscreenchange',listener)};
  },[]);
  async function toggle(){try{if(document.fullscreenElement)await document.exitFullscreen();else await root.current?.requestFullscreen()}catch{setError('Fullscreen unavailable. Try F11.')}}
  return <main ref={root} style={{position:'relative',margin:0,width:'100vw',height:'100dvh',overflow:'hidden',boxSizing:'border-box',padding:'2.5vh 2.5vw 3vh',background:'#061831',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Arial,sans-serif'}}>
