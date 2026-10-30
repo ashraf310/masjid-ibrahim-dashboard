@@ -29,8 +29,8 @@ public final class MainActivity extends Activity {
  private static final String HOST="https://masjid-ibrahim-dashboard.vercel.app";
  private static final String CONFIG=HOST+"/api/device/config";
  private static final String PAIR=HOST+"/api/device/pair";
- private static final String AUDIENCE=HOST+"/api/audience/current";
- private static final String D03=HOST+"/api/d03";
+ // D02 paused: Android TV no longer requests audience status.
+ // D03 paused: Android TV no longer requests live-share status.
  private static final String D03_LIVE=HOST+"/public?tv=1";
  private static final String LIVE=HOST+"/audience-live?tv=1";
  private final Handler handler=new Handler(Looper.getMainLooper());
@@ -131,10 +131,8 @@ public final class MainActivity extends Activity {
     Reply config=null,audience=null,d03=null;
     try{
      if(refreshConfig)config=get(CONFIG,key);
-     if(!refreshConfig||config.status==200)d03=get(D03,null);
-     if(!refreshConfig||(config.status==200&&config.json!=null)) {
-      if((!refreshConfig&&followLive)||(refreshConfig&&config.json.optBoolean("followD02",false)))audience=get(AUDIENCE,null);
-     }
+     // Presentation polling is disabled for production.
+     // No D02 or D03 network requests.
     }catch(Exception ignored){/* Keep existing screen on transient network errors. */}
     final Reply c=config,live=audience,screenShare=d03;
     handler.post(()->{
@@ -150,7 +148,7 @@ public final class MainActivity extends Activity {
        tvId=assigned;
        if(!"D01".equals(dashboard)&&!"D04".equals(dashboard)){showSetup("Assign D01 or D04 to this TV in TV Management.");return;}
        defaultUrl="D01".equals(dashboard)?HOST+"/":HOST+"/d04";
-       followLive=c.json.optBoolean("followD02",false);
+       followLive=false;
        if(!followLive)lastD03Live=false;
        paired=true;lastConfig=System.currentTimeMillis();
       }
@@ -164,9 +162,9 @@ public final class MainActivity extends Activity {
       if(screenShare!=null&&screenShare.status==200&&screenShare.json!=null)
        lastD03Live=screenShare.json.optBoolean("live",false);
       boolean d03Live=followLive&&lastD03Live;
-      navigate(d03Live?D03_LIVE:(presenting?LIVE:defaultUrl));
+      navigate(defaultUrl);
      }
-     handler.postDelayed(poll,1500);
+     handler.postDelayed(poll,15000);
     });
    });
   }

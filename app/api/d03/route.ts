@@ -5,12 +5,14 @@ export const runtime='nodejs';export const dynamic='force-dynamic';
 const headers={'Cache-Control':'no-store'};
 const fresh=(stamp:string|null)=>Boolean(stamp&&Date.now()-new Date(stamp).getTime()<15000);
 export async function GET(){
+ return NextResponse.json({live:false,sessionId:null,disabled:true},{headers});
  const db=stagingDb();if(!db)return NextResponse.json({error:'Backend unavailable'},{status:503,headers});
  const {data,error}=await db.from('d03_live_state').select('status,session_id,heartbeat_at').eq('id',1).maybeSingle();
  if(error)return NextResponse.json({error:'Apply the D03 staging migration'},{status:503,headers});
  return NextResponse.json({live:data?.status==='live'&&fresh(data.heartbeat_at),sessionId:data?.status==='live'&&fresh(data.heartbeat_at)?data.session_id:null},{headers});
 }
 export async function POST(req:NextRequest){
+ return NextResponse.json({error:"Live presentation temporarily disabled"},{status:503,headers});
  const db=stagingDb();if(!db)return NextResponse.json({error:'Backend unavailable'},{status:503,headers});
  const origin=req.headers.get('origin');if(origin&&origin!==new URL(req.url).origin)return NextResponse.json({error:'Origin denied'},{status:403,headers});
  const token=bearerToken(req.headers.get('authorization'));if(!token)return NextResponse.json({error:'Unauthorized'},{status:401,headers});
